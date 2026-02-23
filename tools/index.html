@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tools — FASTACCS</title>
+  <meta name="description" content="Free browser-based tools by teerex 🦖. 100% private — data never leaves your device.">
+  <meta name="theme-color" content="#07090C">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://fastaccs.com/tools/">
+  <meta property="og:title" content="Tools — FASTACCS">
+  <meta property="og:description" content="Free browser-based tools by teerex 🦖. 100% private — data never leaves your device.">
+  <link rel="icon" type="image/png" href="/assets/fa-mark-white-transparent.png">
+  <link rel="canonical" href="https://fastaccs.com/tools/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700;800&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #07090C;
+      --text: rgba(255,255,255,0.92);
+      --text-muted: rgba(255,255,255,0.68);
+      --text-dim: rgba(255,255,255,0.45);
+      --border: rgba(255,255,255,0.10);
+      --border-2: rgba(255,255,255,0.14);
+      --surface: rgba(255,255,255,0.04);
+      --green: #05D471;
+      --blue: #696DFA;
+    }
+
+    body {
+      font-family: 'Open Sans', -apple-system, sans-serif;
+      background: linear-gradient(180deg, #07090C 0%, #050607 100%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      -webkit-font-smoothing: antialiased;
+      padding: 32px 20px;
+    }
+
+    .page {
+      text-align: center;
+      max-width: 560px;
+      width: 100%;
+    }
+
+    .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-dim);
+      text-decoration: none;
+      margin-bottom: 32px;
+      transition: color 0.2s;
+    }
+    .back:hover { color: var(--text-muted); }
+
+    h1 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-bottom: 32px;
+    }
+
+    .tools {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .tool {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      text-decoration: none;
+      color: var(--text);
+      text-align: left;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .tool:hover {
+      border-color: var(--border-2);
+      transform: translateY(-1px);
+    }
+
+    .tool-icon {
+      font-size: 22px;
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+      background: rgba(5,212,113,0.08);
+      border: 1px solid rgba(5,212,113,0.15);
+      border-radius: 10px;
+    }
+
+    .tool-name {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+
+    .tool-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .badge {
+      margin-left: auto;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 3px 8px;
+      border-radius: 6px;
+      flex-shrink: 0;
+      background: rgba(5,212,113,0.10);
+      border: 1px solid rgba(5,212,113,0.22);
+      color: var(--green);
+    }
+
+    .footer {
+      margin-top: 40px;
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <a href="/" class="back">← FASTACCS</a>
+    <h1>Tools</h1>
+    <p class="subtitle">Browser-based · 100% private · by teerex 🦖</p>
+
+    <div class="tools">
+      <a href="/tools/easylogin/" class="tool">
+        <div class="tool-icon">🔐</div>
+        <div>
+          <div class="tool-name">easyLogin</div>
+          <div class="tool-desc">TOTP 2FA code generator. Shareable via link.</div>
+        </div>
+        <span class="badge">Live</span>
+      </a>
+
+      <a href="/tools/logsformatter/" class="tool">
+        <div class="tool-icon">📋</div>
+        <div>
+          <div class="tool-name">Logs Formatter</div>
+          <div class="tool-desc">Bulk credential log parser with 2FA link generation.</div>
+        </div>
+        <span class="badge">Live</span>
+      </a>
+    </div>
+
+    <p class="footer">built by teerex</p>
+  </div>
+</body>
+</html>

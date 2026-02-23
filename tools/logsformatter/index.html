@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+  <title>Logs Formatter — by teerex 🦖</title>
+  <meta name="description" content="Browser-based credential log parser. 100% private — data never leaves your device.">
+  <meta name="author" content="teerex 🦖">
+  <meta name="theme-color" content="#0F1419">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://fastaccs.com/tools/logsformatter/">
+  <meta property="og:title" content="Logs Formatter — by teerex 🦖">
+  <meta property="og:description" content="Browser-based credential log parser. 100% private — data never leaves your device.">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Logs Formatter — by teerex 🦖">
+  <meta name="twitter:description" content="Browser-based credential log parser. 100% private — data never leaves your device.">
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14'>🦖</text></svg>">
+  <link rel="canonical" href="https://fastaccs.com/tools/logsformatter/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&family=Open+Sans:wght@400;500;600&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="header-top">
+        <h1>Logs Formatter</h1>
+        <button class="help-btn" onclick="document.getElementById('helpDialog').showModal()" aria-label="Help">?</button>
+      </div>
+      <p class="privacy-badge">🛡️ 100% browser-based · data never leaves your device</p>
+    </header>
+
+    <div class="toolbar">
+      <label class="toggle-label">
+        <span>Auto Convert</span>
+        <div class="toggle">
+          <input type="checkbox" id="autoConvert" checked>
+          <span class="track"></span>
+        </div>
+      </label>
+      <label class="toggle-label">
+        <span>Reverse</span>
+        <div class="toggle">
+          <input type="checkbox" id="reverseMode">
+          <span class="track"></span>
+        </div>
+      </label>
+      <select id="reverseSeparator" class="separator-select" style="display:none">
+        <option value=":">: colon</option>
+        <option value="|">| pipe</option>
+        <option value=";">; semicolon</option>
+        <option value=",">, comma</option>
+        <option value="-">- hyphen</option>
+        <option value="~">~ tilde</option>
+      </select>
+    </div>
+
+    <div class="workspace">
+      <div class="panel">
+        <label class="panel-label" for="input">Input</label>
+        <div class="drop-zone" id="dropZone">
+          <textarea id="input" placeholder="Paste credential logs here...&#10;&#10;user:pass:2FA&#10;user|pass|email|2FA&#10;user;pass;email;emailpass;2FA"></textarea>
+          <div class="drop-overlay" id="dropOverlay">Drop .txt file here</div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" onclick="manualConvert()" title="Ctrl+Enter">Convert</button>
+        <button class="btn" onclick="copyOutput()" title="Ctrl+Shift+C">Copy</button>
+        <button class="btn" onclick="downloadOutput()">Download</button>
+        <button class="btn" onclick="clearAll()">Clear</button>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <label class="panel-label" for="output">Output</label>
+          <span class="counter" id="statsCounter"></span>
+        </div>
+        <textarea id="output" readonly placeholder="Converted output appears here..."></textarea>
+        <div class="output-tools">
+          <label class="toggle-label toggle-sm">
+            <span id="toggleLabel">2FA Links</span>
+            <div class="toggle">
+              <input type="checkbox" id="toggleLinks" checked disabled>
+              <span class="track"></span>
+            </div>
+          </label>
+          <div class="social-row" id="socialButtons">
+            <button class="btn-icon" onclick="generateSocialLinks('x')" id="btnX" disabled title="X">𝕏</button>
+            <button class="btn-icon" onclick="generateSocialLinks('instagram')" id="btnInstagram" disabled title="Instagram">📷</button>
+            <button class="btn-icon" onclick="generateSocialLinks('facebook')" id="btnFacebook" disabled title="Facebook">📘</button>
+            <button class="btn-icon" onclick="generateSocialLinks('tiktok')" id="btnTiktok" disabled title="TikTok">🎵</button>
+            <button class="btn-icon" onclick="generateSocialLinks('linkedin')" id="btnLinkedin" disabled title="LinkedIn">💼</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <details class="settings">
+      <summary>⚙️ Settings</summary>
+      <div class="settings-body">
+        <div class="setting-group">
+          <label class="setting-label">Custom Output Format</label>
+          <textarea id="formatInput" rows="3" placeholder="username:password:2fa&#10;Use 'omit' to skip fields"></textarea>
+          <div class="setting-actions">
+            <button class="btn btn-sm" onclick="saveFormat()">Save</button>
+            <button class="btn btn-sm btn-ghost" onclick="resetFormat()">Reset</button>
+          </div>
+        </div>
+        <div class="setting-group">
+          <label class="setting-label">2FA Link Prefix</label>
+          <input type="text" id="prefixInput" placeholder="https://fastaccs.com/tools/easylogin/#">
+          <small class="prefix-current">Current: <span id="currentPrefix"></span></small>
+          <div class="setting-actions">
+            <button class="btn btn-sm" id="savePrefix" onclick="save2FAPrefix()">Save</button>
+            <button class="btn btn-sm btn-ghost" onclick="reset2FAPrefix()">Reset</button>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <footer class="footer">
+      built with rage <a href="https://www.rottenlibrary.net/"    target="_blank" rel="noopener">by teerex 🦖</a>
+    </footer>
+  </div>
+
+  <dialog id="helpDialog">
+    <div class="dialog-content">
+      <div class="dialog-header">
+        <h2>How to Use</h2>
+        <button class="close-btn" onclick="document.getElementById('helpDialog').close()">✕</button>
+      </div>
+      <ol class="help-steps">
+        <li><strong>Paste</strong> or <strong>drag & drop</strong> a .txt file into the input box</li>
+        <li><strong>Auto-convert</strong> is on by default — output updates as you type</li>
+        <li>Toggle off auto-convert to use <strong>custom formats</strong> (rename fields, use 'omit' to skip)</li>
+        <li>Use <strong>social buttons</strong> to generate profile links from usernames</li>
+        <li><strong>Reverse mode</strong> converts formatted output back to raw format</li>
+      </ol>
+      <div class="help-features">
+        <h3>Keyboard Shortcuts</h3>
+        <p><kbd>Ctrl+Enter</kbd> Convert · <kbd>Ctrl+Shift+C</kbd> Copy output</p>
+      </div>
+      <div class="help-features">
+        <h3>Supported Formats</h3>
+        <p>user:pass:2FA · user|pass|2FA · user;pass;2FA · user,pass,2FA</p>
+        <h3>Smart Detection</h3>
+        <p>Automatically classifies usernames, passwords, emails, 2FA codes. Omits hashes and tokens.</p>
+      </div>
+      <p class="help-privacy">🛡️ Everything processes in your browser. No servers, no tracking, no data collection.</p>
+    </div>
+  </dialog>
+
+  <div class="toast" id="notification"></div>
+  <script src="app.js"></script>
+</body>
+</html>
