@@ -26,7 +26,7 @@
   <link rel="icon" type="image/png" href="assets/fa-mark-white-transparent.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700;800&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -46,7 +46,7 @@
     }
 
     body {
-      font-family: 'Inter', -apple-system, sans-serif;
+      font-family: 'Open Sans', -apple-system, sans-serif;
       background: linear-gradient(180deg, #07090C 0%, #050607 100%);
       color: var(--text);
       min-height: 100vh;
@@ -175,26 +175,43 @@
       color: var(--green);
     }
 
+    /* Trust section */
+    .trusted-by-customers {
+      margin: 32px 0;
+      padding-top: 24px;
+      border-top: 1px solid rgba(201,146,26,0.25);
+      opacity: 0;
+      animation: fadeUp 0.6s ease-out 0.5s forwards;
+    }
+    .trusted-by-customers-text {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: 0.02em;
+    }
+
     /* Community link */
     .community {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
-      padding: 12px 24px;
-      border-radius: 10px;
+      padding: 14px 32px;
+      border-radius: 12px;
       border: 1px solid var(--border);
-      background: transparent;
-      color: var(--text-muted);
+      background: rgba(5,212,113,0.08);
+      color: var(--text);
       font-size: 14px;
-      font-weight: 500;
+      font-weight: 600;
       text-decoration: none;
-      transition: border-color 0.2s ease, color 0.2s ease;
+      transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
       opacity: 0;
-      animation: fadeUp 0.6s ease-out 0.5s forwards;
+      animation: fadeUp 0.6s ease-out 0.55s forwards;
     }
     .community:hover {
-      border-color: var(--border-2);
-      color: var(--text);
+      border-color: var(--green);
+      background: rgba(5,212,113,0.14);
+      color: var(--green);
     }
 
     /* Footer */
@@ -239,7 +256,7 @@
           <svg width="20" height="20" fill="none" stroke="#C9921A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
         </div>
         <div class="product-name" style="color: var(--gold);">FA Logistics</div>
-        <div class="product-desc">International gift delivery. Send&nbsp;love, instantly, anywhere.</div>
+        <div class="product-desc">Worldwide Gift Delivery. Send&nbsp;Love, Instantly, Anywhere.</div>
       </a>
 
       <a href="/smm/" class="product">
@@ -247,9 +264,12 @@
         <div class="product-icon" style="background: rgba(5,212,113,0.10); border: 1px solid rgba(5,212,113,0.22);">
           <svg width="20" height="20" fill="none" stroke="#05D471" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
         </div>
-        <div class="product-name" style="color: var(--green);">FastAccs SMM</div>
-        <div class="product-desc">Your trusted marketplace for social media accounts.</div>
+        <div class="product-name" style="color: var(--green);">FastAccounts SMM</div>
+        <div class="product-desc">Your Trusted Marketplace for Social Media Accounts.</div>
       </a>
+    </div>
+    <div class="trusted-by-customers">
+      <p class="trusted-by-customers-text">Trusted by over 1,200 customers</p>
     </div>
 
     <a href="https://chat.whatsapp.com/L4pqTeTiKIF9AXcbpvMLCo" class="community" target="_blank" rel="noopener noreferrer">
