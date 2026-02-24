@@ -453,6 +453,7 @@ input#prefixInput {
 /* ── Footer ─────────────────────────────────── */
 
 .footer {
+  margin-top: auto;
   text-align: center;
   padding: 20px 0 8px;
   font-size: 12px;
