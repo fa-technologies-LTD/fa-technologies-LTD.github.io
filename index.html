@@ -28,6 +28,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700;800&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 
+  <!-- Google Analytics (GA4) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-3JKR6RPV56"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-3JKR6RPV56');
+  </script>
+
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -272,7 +281,7 @@
       <p class="trusted-by-customers-text">Trusted by over 1,200 customers</p>
     </div>
 
-    <a href="https://chat.whatsapp.com/L4pqTeTiKIF9AXcbpvMLCo" class="community" target="_blank" rel="noopener noreferrer">
+    <a href="https://chat.whatsapp.com/L4pqTeTiKIF9AXcbpvMLCo" class="community" target="_blank" rel="noopener noreferrer" onclick="gtag('event', 'join_community', {'event_category': 'engagement', 'event_label': 'whatsapp_community'})">
       Join our community&ensp;→
     </a>
 
