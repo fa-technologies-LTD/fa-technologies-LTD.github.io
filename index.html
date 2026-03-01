@@ -70,6 +70,8 @@
       padding: 48px 20px 32px;
       max-width: 680px;
       width: 100%;
+      position: relative;
+      z-index: 1;
     }
 
     /* Logo */
@@ -212,9 +214,20 @@
       font-size: 14px;
       font-weight: 600;
       text-decoration: none;
+      position: relative;
+      overflow: hidden;
       transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
       opacity: 0;
-      animation: fadeUp 0.6s ease-out 0.55s forwards;
+      animation: fadeUp 0.6s ease-out 0.55s forwards, btn-glow-pulse 3.5s ease-in-out 1.8s infinite;
+    }
+    .community::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 35%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(5,212,113,0.13), transparent);
+      animation: shimmer-sweep 3.5s ease-in-out 1.8s infinite;
     }
     .community:hover {
       border-color: var(--green);
@@ -240,6 +253,76 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+    /* ── Logo breathe (Option C) ── */
+    @keyframes logo-breathe {
+      0%, 100% { opacity: 0.72; }
+      50%       { opacity: 1; }
+    }
+    .logo img { animation: logo-breathe 3s ease-in-out 0.9s infinite; }
+
+    /* ── Live badge dot blink (Option C) ── */
+    @keyframes dot-blink {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: 0.25; transform: scale(0.55); }
+    }
+    .badge-live-white {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .badge-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--green);
+      flex-shrink: 0;
+      animation: dot-blink 1.5s ease-in-out infinite;
+    }
+
+    /* ── Shimmer C + glow on community button ── */
+    @keyframes shimmer-sweep {
+      0%   { transform: translateX(-100%) skewX(-15deg); opacity: 0; }
+      8%   { opacity: 1; }
+      92%  { opacity: 1; }
+      100% { transform: translateX(300%) skewX(-15deg); opacity: 0; }
+    }
+    @keyframes btn-glow-pulse {
+      0%, 100% { box-shadow: 0 0 0px 0 rgba(5,212,113,0); }
+      50%       { box-shadow: 0 0 22px 0px rgba(5,212,113,0.20); }
+    }
+
+    /* ── Background electric lines ── */
+    @keyframes line-appear {
+      0%   { stroke-dashoffset: 800; opacity: 0; }
+      5%   { opacity: 0.15; }
+      50%  { stroke-dashoffset: 0; opacity: 0.15; }
+      90%  { opacity: 0; }
+      100% { stroke-dashoffset: -800; opacity: 0; }
+    }
+    .bg-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .bg-lines .el {
+      stroke: var(--green);
+      stroke-width: 0.7;
+      fill: none;
+      stroke-dasharray: 800;
+      stroke-dashoffset: 800;
+      animation: line-appear 6s ease-in-out infinite;
+      opacity: 0;
+    }
+    .bg-lines .el:nth-child(1) { animation-delay: 0s; }
+    .bg-lines .el:nth-child(2) { animation-delay: 1.3s; }
+    .bg-lines .el:nth-child(3) { animation-delay: 2.4s; }
+    .bg-lines .el:nth-child(4) { animation-delay: 3.7s; }
+    .bg-lines .el:nth-child(5) { animation-delay: 0.7s; }
+    .bg-lines .el:nth-child(6) { animation-delay: 2s; }
+    .bg-lines .el:nth-child(7) { animation-delay: 4.5s; }
+    .bg-lines .el:nth-child(8) { animation-delay: 1.8s; }
+
     @media (max-width: 480px) {
       .brand { font-size: 34px; }
       .products { grid-template-columns: 1fr; }
@@ -249,6 +332,20 @@
   </style>
 </head>
 <body>
+  <!-- Background electric lines -->
+  <div class="bg-canvas">
+    <svg class="bg-lines" width="100%" height="100%" viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <line class="el" x1="-20" y1="160" x2="500" y2="240"/>
+      <line class="el" x1="420" y1="0" x2="20" y2="420"/>
+      <line class="el" x1="0" y1="500" x2="460" y2="340"/>
+      <line class="el" x1="220" y1="-10" x2="170" y2="810"/>
+      <line class="el" x1="-10" y1="320" x2="440" y2="560"/>
+      <line class="el" x1="60" y1="800" x2="400" y2="100"/>
+      <line class="el" x1="340" y1="-5" x2="90" y2="790"/>
+      <line class="el" x1="-20" y1="640" x2="450" y2="120"/>
+    </svg>
+  </div>
+
   <div class="page">
     <div class="logo">
       <a href="/"><img src="assets/fa-mark-white-transparent.png" alt="FASTACCS" width="516" height="548"></a>
@@ -259,7 +356,7 @@
 
     <div class="products">
       <a href="/logistics/" class="product">
-        <span class="badge-live badge-live-white">Live</span>
+        <span class="badge-live badge-live-white"><span class="badge-dot"></span>Live</span>
         <div class="product-icon" style="background: rgba(5,212,113,0.10); border: 1px solid rgba(5,212,113,0.22);">
           <svg width="20" height="20" fill="none" stroke="#05D471" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
         </div>
@@ -277,7 +374,7 @@
       </a>
     </div>
     <div class="trusted-by-customers">
-      <p class="trusted-by-customers-text">Trusted by over 1,200 customers</p>
+      <p class="trusted-by-customers-text">Trusted by over <span id="customerCount" style="color:var(--green);font-weight:700;display:inline-block;transition:font-size 0.3s cubic-bezier(0.34,1.56,0.64,1);">0</span> customers</p>
     </div>
 
     <a href="https://chat.whatsapp.com/L4pqTeTiKIF9AXcbpvMLCo" class="community" target="_blank" rel="noopener noreferrer" onclick="gtag('event', 'join_community', {'event_category': 'engagement', 'event_label': 'whatsapp_community'})">
@@ -286,5 +383,41 @@
 
     <p class="footer">© 2026 FA Technologies LTD</p>
   </div>
+  <script>
+    (function () {
+      function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+      var el = document.getElementById('customerCount');
+      var target = 5000;
+      var duration = 2600;
+      var baseSize = 14; // px — matches .trusted-by-customers-text font-size
+      var start = null;
+      function step(ts) {
+        if (!start) start = ts;
+        var elapsed = ts - start;
+        var progress = Math.min(elapsed / duration, 1);
+        var eased = easeOutCubic(progress);
+        var current = Math.round(target * eased);
+        if (progress < 1) {
+          // Font grows from baseSize up to baseSize*1.55 at peak, proportional to eased
+          var growPx = baseSize + (baseSize * 0.55 * eased);
+          el.style.fontSize = growPx.toFixed(1) + 'px';
+          el.style.lineHeight = '1';
+          el.textContent = current.toLocaleString();
+          requestAnimationFrame(step);
+        } else {
+          el.textContent = '5,000+';
+          // Pop: briefly overshoot then snap back via CSS transition
+          el.style.fontSize = (baseSize * 1.7) + 'px';
+          el.style.lineHeight = '1';
+          setTimeout(function () {
+            el.style.fontSize = '';
+            el.style.lineHeight = '';
+          }, 40);
+        }
+      }
+      // Start after page entrance animations settle
+      setTimeout(function () { requestAnimationFrame(step); }, 900);
+    })();
+  </script>
 </body>
 </html>
