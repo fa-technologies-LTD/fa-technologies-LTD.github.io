@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BatchPrep — FASTACCS Tools</title>
+  <meta name="description" content="Add prefix and suffix to multiple links instantly. Browser-based, 100% private.">
+  <meta name="theme-color" content="#07090C">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://fastaccs.com/tools/batchprep/">
+  <meta property="og:title" content="BatchPrep — FASTACCS Tools">
+  <meta property="og:description" content="Add prefix and suffix to multiple links instantly. Browser-based, 100% private.">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="BatchPrep — FASTACCS Tools">
+  <meta name="twitter:description" content="Add prefix and suffix to multiple links instantly. Browser-based, 100% private.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://fastaccs.com/tools/batchprep/">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='22' font-family='monospace' font-weight='bold' fill='%2305D471'>%3E_</text></svg>">
+
+  <!-- Google Analytics (GA4) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-3JKR6RPV56"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-3JKR6RPV56');
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700;800&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg:         #07090C;
+      --bg-elev-1:  #0B0F12;
+      --bg-elev-2:  #0F141B;
+      --surface:    rgba(255,255,255,0.04);
+      --border:     rgba(255,255,255,0.10);
+      --border-2:   rgba(255,255,255,0.16);
+      --text:       rgba(255,255,255,0.92);
+      --text-muted: rgba(255,255,255,0.68);
+      --text-dim:   rgba(255,255,255,0.45);
+      --green:      #05D471;
+      --green-faint:#03b85e;
+      --success:    #05D471;
+      --danger:     #FF4D4F;
+      --font-head:  'DM Sans', system-ui, sans-serif;
+      --font-body:  'Open Sans', system-ui, sans-serif;
+      --font-mono:  'Courier New', 'Courier Prime', monospace;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: linear-gradient(180deg, #07090C 0%, #050607 100%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 32px 16px 64px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .page {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    /* ── Back nav ── */
+    .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-dim);
+      text-decoration: none;
+      margin-bottom: 32px;
+      transition: color 0.2s;
+    }
+    .back:hover { color: var(--text-muted); }
+
+    /* ── Header ── */
+    .header {
+      margin-bottom: 32px;
+    }
+    .header h1 {
+      font-family: var(--font-head);
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .header h1 span {
+      color: var(--green);
+    }
+    .header p {
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--bg-elev-1);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 14px;
+    }
+
+    /* ── Field label ── */
+    .field-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      margin-bottom: 8px;
+    }
+
+    /* ── Inputs ── */
+    textarea, input[type="text"] {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 14px;
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      resize: vertical;
+    }
+    textarea { min-height: 150px; line-height: 1.6; }
+    textarea:focus, input[type="text"]:focus {
+      outline: none;
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(5,212,113,0.12);
+    }
+    textarea::placeholder, input[type="text"]::placeholder {
+      color: var(--text-dim);
+    }
+
+    .prefix-suffix-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    /* ── Buttons ── */
+    .btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .btn {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 999px;
+      font-family: var(--font-body);
+      font-weight: 700;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      transition: background 160ms ease, color 160ms ease, transform 160ms cubic-bezier(0.34,1.56,0.64,1), box-shadow 160ms ease;
+    }
+    .btn-primary {
+      background: transparent;
+      border: 1.5px solid var(--green);
+      color: var(--green);
+    }
+    .btn-primary:hover {
+      background: rgba(5,212,113,0.08);
+      transform: translateY(-2px) scale(1.01);
+      box-shadow: 0 0 0 1px rgba(5,212,113,0.2), 0 10px 24px rgba(5,212,113,0.1);
+    }
+    .btn-primary:active {
+      background: var(--green);
+      color: #07090C;
+      transform: translateY(1px) scale(0.97);
+      transition-duration: 80ms;
+    }
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+    .btn-secondary:hover {
+      border-color: var(--border-2);
+      color: var(--text);
+      background: rgba(255,255,255,0.04);
+    }
+    .btn-secondary:active {
+      background: rgba(255,255,255,0.08);
+      transition-duration: 80ms;
+    }
+
+    /* ── Output ── */
+    .output-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .count-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: rgba(5,212,113,0.10);
+      border: 1px solid rgba(5,212,113,0.20);
+      color: var(--green);
+    }
+    .output-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      min-height: 180px;
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      line-height: 1.7;
+      color: var(--text-muted);
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    /* ── Keyboard hint ── */
+    .kbd-hint {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 10px;
+      text-align: right;
+    }
+    kbd {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 5px;
+      color: var(--text-muted);
+    }
+
+    /* ── Footer ── */
+    .footer {
+      margin-top: 32px;
+      text-align: center;
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+    .footer a { color: var(--green); text-decoration: none; font-weight: 600; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-family: var(--font-body);
+      font-weight: 700;
+      font-size: 13px;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      pointer-events: none;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.success { background: var(--green); color: #07090C; }
+    .toast.error   { background: var(--danger); color: #fff; }
+
+    @media (max-width: 520px) {
+      .prefix-suffix-row, .btn-row { grid-template-columns: 1fr; }
+      .header h1 { font-size: 22px; }
+      .card { padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <a href="/tools/" class="back">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      All Tools
+    </a>
+
+    <div class="header">
+      <h1>Batch<span>Prep</span></h1>
+      <p>Add prefix &amp; suffix to multiple links instantly</p>
+    </div>
+
+    <!-- Input card -->
+    <div class="card">
+      <label class="field-label">Paste Links — one per line</label>
+      <textarea id="input" placeholder="https://instagram.com/username&#10;https://instagram.com/another&#10;https://example.com/page" spellcheck="false"></textarea>
+
+      <div class="prefix-suffix-row">
+        <div>
+          <label class="field-label">Prefix</label>
+          <input type="text" id="prefix" placeholder="e.g. 821|">
+        </div>
+        <div>
+          <label class="field-label">Suffix</label>
+          <input type="text" id="suffix" placeholder="e.g. |509">
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="formatBtn">Format Links</button>
+        <button class="btn btn-secondary" id="clearBtn">Clear All</button>
+      </div>
+    </div>
+
+    <!-- Output card -->
+    <div class="card">
+      <div class="output-header">
+        <label class="field-label" style="margin-bottom:0">Output</label>
+        <span class="count-badge" id="count">0 links</span>
+      </div>
+      <div class="output-box" id="output">(formatted links will appear here)</div>
+
+      <div class="btn-row" style="margin-top:14px">
+        <button class="btn btn-primary" id="copyBtn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy Output
+        </button>
+        <button class="btn btn-secondary" id="downloadBtn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download .txt
+        </button>
+      </div>
+
+      <p class="kbd-hint"><kbd>⌘ Enter</kbd> format &nbsp;·&nbsp; <kbd>⌘ K</kbd> clear</p>
+    </div>
+
+    <p class="footer">part of <a href="/tools/">FASTACCS Tools</a> · built by <a href="https://fastaccs.com/">teerex</a></p>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const inputEl   = document.getElementById('input');
+    const prefixEl  = document.getElementById('prefix');
+    const suffixEl  = document.getElementById('suffix');
+    const outputEl  = document.getElementById('output');
+    const countEl   = document.getElementById('count');
+    const formatBtn = document.getElementById('formatBtn');
+    const clearBtn  = document.getElementById('clearBtn');
+    const copyBtn   = document.getElementById('copyBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const toastEl   = document.getElementById('toast');
+
+    let formattedLinks = [];
+
+    function formatLinks() {
+      const raw = inputEl.value.trim();
+      if (!raw) {
+        outputEl.textContent = '(no links provided)';
+        countEl.textContent  = '0 links';
+        formattedLinks = [];
+        return;
+      }
+
+      const prefix = prefixEl.value;
+      const suffix = suffixEl.value;
+      const lines  = raw.split('\n').map(l => l.trim()).filter(Boolean);
+
+      formattedLinks = lines.map(link => `${prefix}${link}${suffix}`);
+
+      outputEl.textContent = formattedLinks.join('\n');
+      const n = formattedLinks.length;
+      countEl.textContent = `${n} link${n !== 1 ? 's' : ''}`;
+    }
+
+    function clearAll() {
+      inputEl.value = '';
+      prefixEl.value = '';
+      suffixEl.value = '';
+      outputEl.textContent = '(formatted links will appear here)';
+      countEl.textContent = '0 links';
+      formattedLinks = [];
+      inputEl.focus();
+    }
+
+    function copyOutput() {
+      if (!formattedLinks.length) { showToast('Nothing to copy', 'error'); return; }
+      navigator.clipboard.writeText(formattedLinks.join('\n'))
+        .then(() => showToast('Copied to clipboard!', 'success'))
+        .catch(() => showToast('Copy failed', 'error'));
+    }
+
+    function downloadOutput() {
+      if (!formattedLinks.length) { showToast('Nothing to download', 'error'); return; }
+      const blob = new Blob([formattedLinks.join('\n')], { type: 'text/plain' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url;
+      a.download = `batchprep-${Date.now()}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Downloaded!', 'success');
+    }
+
+    let toastTimer;
+    function showToast(msg, type = 'success') {
+      clearTimeout(toastTimer);
+      toastEl.textContent = msg;
+      toastEl.className  = `toast ${type} show`;
+      toastTimer = setTimeout(() => { toastEl.classList.remove('show'); }, 2200);
+    }
+
+    formatBtn.addEventListener('click', formatLinks);
+    clearBtn.addEventListener('click', clearAll);
+    copyBtn.addEventListener('click', copyOutput);
+    downloadBtn.addEventListener('click', downloadOutput);
+
+    inputEl.addEventListener('input', formatLinks);
+    prefixEl.addEventListener('input', formatLinks);
+    suffixEl.addEventListener('input', formatLinks);
+
+    document.addEventListener('keydown', e => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); formatLinks(); }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k')     { e.preventDefault(); clearAll(); }
+    });
+
+    inputEl.focus();
+  </script>
+</body>
+</html>
