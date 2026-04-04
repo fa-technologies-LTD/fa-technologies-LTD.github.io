@@ -161,6 +161,10 @@ body::before {
   font-weight: 500;
 }
 
+.secret-input-wrap {
+  position: relative;
+}
+
 .secret-input {
   width: 100%;
   min-height: 54px;
@@ -171,9 +175,49 @@ body::before {
   font-family: "Space Grotesk", "DM Sans", monospace;
   font-size: 1.01rem;
   letter-spacing: 0.01em;
-  padding: 0 18px;
+  padding: 0 48px 0 18px;
   outline: none;
   transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.input-clear-btn {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(2, 7, 6, 0.92);
+  color: rgba(223, 233, 229, 0.86);
+  font-family: "Space Grotesk", "DM Sans", sans-serif;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 160ms ease, color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.input-clear-btn:hover {
+  color: var(--text);
+  border-color: rgba(5, 212, 113, 0.45);
+  background: rgba(5, 16, 12, 0.96);
+}
+
+.input-clear-btn:active {
+  transform: translateY(-50%) scale(0.96);
+}
+
+.input-clear-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(5, 212, 113, 0.26);
+}
+
+.input-clear-btn[hidden] {
+  display: none;
 }
 
 .secret-input::placeholder {
@@ -575,6 +619,12 @@ body::before {
   .community-btn,
   .copy-btn {
     min-height: 50px;
+  }
+
+  .input-clear-btn {
+    width: 26px;
+    height: 26px;
+    right: 8px;
   }
 
   .validation-msg {

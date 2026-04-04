@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>easyLogin - Fast Accounts</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='22' font-family='monospace' font-weight='bold' fill='%234A9B7F'>%3E_</text></svg>">
   <script src="https://cdn.jsdelivr.net/npm/otplib/otplib-browser.min.js"></script>
   <link rel="stylesheet" href="fa-style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,7 +27,10 @@
       <p class="hero-subtitle">Paste your 2FA secret to generate login code</p>
 
       <label class="sr-only" for="secret-input">Secret key</label>
-      <input id="secret-input" class="secret-input" type="text" placeholder="e.g. JBSWY3DPEHPK3PXP" autocomplete="off" spellcheck="false" inputmode="latin" aria-describedby="helper-text validation-msg" aria-invalid="false">
+      <div class="secret-input-wrap">
+        <input id="secret-input" class="secret-input" type="text" placeholder="e.g. JBSWY3DPEHPK3PXP" autocomplete="off" spellcheck="false" inputmode="latin" aria-describedby="helper-text validation-msg" aria-invalid="false">
+        <button type="button" class="input-clear-btn" id="input-clear-btn" aria-label="Clear input and generated code" title="Clear input and generated code" hidden>&times;</button>
+      </div>
       <span id="helper-text" class="sr-only">Base32 secret input</span>
       <p id="validation-msg" class="validation-msg" role="status" aria-live="polite"></p>
 
@@ -42,9 +46,7 @@
     <div class="meta-pills" aria-label="Key features">
       <span class="meta-item"><span class="meta-dot" aria-hidden="true"></span>Standard 2FA code</span>
       <span class="meta-sep" aria-hidden="true"></span>
-      <span class="meta-item"><span class="meta-dot" aria-hidden="true"></span>Works on your device</span>
-      <span class="meta-sep" aria-hidden="true"></span>
-      <span class="meta-item"><span class="meta-dot" aria-hidden="true"></span>Nothing sent online</span>
+      <span class="meta-item"><span class="meta-dot" aria-hidden="true"></span>Secure</span>
     </div>
 
     <section class="panel promo" aria-label="Marketing section">
@@ -74,6 +76,7 @@
   <script>
     (function () {
       var input = document.getElementById("secret-input");
+      var inputClearBtn = document.getElementById("input-clear-btn");
       var generateBtn = document.getElementById("generate-btn");
       var validationMsg = document.getElementById("validation-msg");
       var resultPanel = document.getElementById("result-panel");
@@ -169,6 +172,36 @@
         }
       }
 
+      function syncInputClearButton() {
+        if (!inputClearBtn) {
+          return;
+        }
+        inputClearBtn.hidden = !input.value;
+      }
+
+      function clearGeneratedState() {
+        stopCountdown();
+        currentSecret = "";
+        resultPanel.hidden = true;
+        codeOutput.textContent = "000 000";
+        countdown.textContent = "30";
+        timer.classList.remove("warning", "danger");
+        if (copyResetTimer) {
+          window.clearTimeout(copyResetTimer);
+          copyResetTimer = null;
+        }
+        resetCopyButton();
+      }
+
+      function clearInputAndGenerated() {
+        input.value = "";
+        input.classList.remove("input-error");
+        clearValidation();
+        clearGeneratedState();
+        syncInputClearButton();
+        input.focus();
+      }
+
       function hasTOTP() {
         return !!(window.otplib && window.otplib.authenticator);
       }
@@ -232,13 +265,13 @@
       function generateFromInput() {
         var sanitized = sanitizeSecret(input.value);
         input.value = sanitized;
+        syncInputClearButton();
 
         var message = validateSecret(sanitized);
         if (message) {
           input.classList.add("input-error");
           showValidation(message);
-          resultPanel.hidden = true;
-          stopCountdown();
+          clearGeneratedState();
           return false;
         }
 
@@ -250,8 +283,7 @@
         } catch (error) {
           input.classList.add("input-error");
           showValidation(error.message);
-          resultPanel.hidden = true;
-          stopCountdown();
+          clearGeneratedState();
           return false;
         }
       }
@@ -269,6 +301,7 @@
         }
 
         input.value = sanitized;
+        syncInputClearButton();
         input.focus();
         input.setSelectionRange(sanitized.length, sanitized.length);
         return generateFromInput();
@@ -310,6 +343,7 @@
           input.setSelectionRange(leftSanitized.length, leftSanitized.length);
         }
 
+        syncInputClearButton();
         input.classList.remove("input-error");
         clearValidation();
       });
@@ -323,6 +357,7 @@
 
       generateBtn.addEventListener("click", generateFromInput);
       copyBtn.addEventListener("click", copyCode);
+      inputClearBtn.addEventListener("click", clearInputAndGenerated);
 
       window.addEventListener("hashchange", applySecretFromUrl);
       document.addEventListener("visibilitychange", function () {
@@ -331,6 +366,7 @@
         }
       });
 
+      syncInputClearButton();
       applySecretFromUrl();
     })();
   </script>
