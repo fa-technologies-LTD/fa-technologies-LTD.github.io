@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>easyLogin - Fast Accounts</title>
+  <script src="https://cdn.jsdelivr.net/npm/otplib/otplib-browser.min.js"></script>
   <link rel="stylesheet" href="fa-style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,6 +31,12 @@
       <p id="validation-msg" class="validation-msg" role="status" aria-live="polite"></p>
 
       <button type="button" class="generate-btn" id="generate-btn">+ Generate Code</button>
+      <div id="result-panel" class="result-panel" hidden>
+        <p class="result-label">Current 2FA code</p>
+        <p id="code-output" class="code" aria-live="polite">000 000</p>
+        <p class="timer">Expires in <span id="countdown">30</span>s</p>
+        <button type="button" class="copy-btn" id="copy-btn">Copy Code</button>
+      </div>
     </section>
 
     <div class="meta-pills" aria-label="Key features">
@@ -69,9 +76,21 @@
       var input = document.getElementById("secret-input");
       var generateBtn = document.getElementById("generate-btn");
       var validationMsg = document.getElementById("validation-msg");
+      var resultPanel = document.getElementById("result-panel");
+      var codeOutput = document.getElementById("code-output");
+      var countdown = document.getElementById("countdown");
+      var timer = document.querySelector(".timer");
+      var copyBtn = document.getElementById("copy-btn");
+
+      var currentInterval = null;
+      var currentSecret = "";
+      var copyResetTimer = null;
 
       function sanitizeSecret(value) {
-        return value.toUpperCase().replace(/\s+/g, "").replace(/[^A-Z2-7]/g, "");
+        return String(value || "")
+          .toUpperCase()
+          .replace(/[\s\-_]/g, "")
+          .replace(/[^A-Z2-7=]/g, "");
       }
 
       function decodeValue(value) {
@@ -130,6 +149,113 @@
         input.setAttribute("aria-invalid", "false");
       }
 
+      function validateSecret(secret) {
+        if (!secret) {
+          return "Enter your 2FA secret to continue.";
+        }
+        if (secret.length < 16) {
+          return "Secret seems short. Most 2FA keys are 16+ characters.";
+        }
+        if (!/^[A-Z2-7]+=*$/.test(secret)) {
+          return "Use only Base32 characters: letters A-Z and numbers 2-7.";
+        }
+        return "";
+      }
+
+      function stopCountdown() {
+        if (currentInterval) {
+          window.clearInterval(currentInterval);
+          currentInterval = null;
+        }
+      }
+
+      function hasTOTP() {
+        return !!(window.otplib && window.otplib.authenticator);
+      }
+
+      function generateToken(secret) {
+        if (!hasTOTP()) {
+          throw new Error("TOTP engine failed to load. Refresh and try again.");
+        }
+
+        try {
+          return window.otplib.authenticator.generate(secret);
+        } catch (_error) {
+          throw new Error("Unable to generate code. Check the secret key.");
+        }
+      }
+
+      function formatCode(code) {
+        return String(code || "").replace(/(\d{3})(\d{3})/, "$1 $2");
+      }
+
+      function secondsRemaining() {
+        return 30 - (Math.floor(Date.now() / 1000) % 30);
+      }
+
+      function updateCountdown() {
+        if (!currentSecret) {
+          return;
+        }
+
+        var remaining = secondsRemaining();
+        countdown.textContent = String(remaining);
+
+        timer.classList.remove("warning", "danger");
+        if (remaining <= 5) {
+          timer.classList.add("danger");
+        } else if (remaining <= 10) {
+          timer.classList.add("warning");
+        }
+
+        if (remaining === 30) {
+          try {
+            codeOutput.textContent = formatCode(generateToken(currentSecret));
+          } catch (error) {
+            stopCountdown();
+            showValidation(error.message);
+          }
+        }
+      }
+
+      function renderCode(secret) {
+        var token = generateToken(secret);
+        currentSecret = secret;
+        codeOutput.textContent = formatCode(token);
+        resultPanel.hidden = false;
+        updateCountdown();
+
+        stopCountdown();
+        currentInterval = window.setInterval(updateCountdown, 1000);
+      }
+
+      function generateFromInput() {
+        var sanitized = sanitizeSecret(input.value);
+        input.value = sanitized;
+
+        var message = validateSecret(sanitized);
+        if (message) {
+          input.classList.add("input-error");
+          showValidation(message);
+          resultPanel.hidden = true;
+          stopCountdown();
+          return false;
+        }
+
+        try {
+          renderCode(sanitized);
+          input.classList.remove("input-error");
+          clearValidation();
+          return true;
+        } catch (error) {
+          input.classList.add("input-error");
+          showValidation(error.message);
+          resultPanel.hidden = true;
+          stopCountdown();
+          return false;
+        }
+      }
+
       function applySecretFromUrl() {
         var candidate = resolveSecretFromUrl();
         if (!candidate) {
@@ -143,15 +269,35 @@
         }
 
         input.value = sanitized;
-        clearValidation();
         input.focus();
         input.setSelectionRange(sanitized.length, sanitized.length);
-        generateBtn.click();
-        return true;
+        return generateFromInput();
       }
 
-      applySecretFromUrl();
-      window.addEventListener("hashchange", applySecretFromUrl);
+      function resetCopyButton() {
+        copyBtn.textContent = "Copy Code";
+      }
+
+      function copyCode() {
+        if (!currentSecret || !codeOutput.textContent) {
+          return;
+        }
+
+        var rawCode = codeOutput.textContent.replace(/\s+/g, "");
+        navigator.clipboard.writeText(rawCode).then(function () {
+          copyBtn.textContent = "Copied";
+          if (copyResetTimer) {
+            window.clearTimeout(copyResetTimer);
+          }
+          copyResetTimer = window.setTimeout(resetCopyButton, 1400);
+        }).catch(function () {
+          copyBtn.textContent = "Copy failed";
+          if (copyResetTimer) {
+            window.clearTimeout(copyResetTimer);
+          }
+          copyResetTimer = window.setTimeout(resetCopyButton, 1600);
+        });
+      }
 
       input.addEventListener("input", function () {
         var raw = input.value;
@@ -162,29 +308,30 @@
         if (raw !== sanitized) {
           input.value = sanitized;
           input.setSelectionRange(leftSanitized.length, leftSanitized.length);
-          showValidation("Use only letters A-Z and numbers 2-7.");
-        } else if (sanitized) {
-          clearValidation();
-        } else {
-          clearValidation();
         }
 
         input.classList.remove("input-error");
-      });
-
-      generateBtn.addEventListener("click", function () {
-        if (!input.value.trim()) {
-          input.classList.add("input-error");
-          showValidation("Enter your 2FA secret to continue.");
-          window.setTimeout(function () {
-            input.classList.remove("input-error");
-          }, 700);
-          input.focus();
-          return;
-        }
-
         clearValidation();
       });
+
+      input.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          generateFromInput();
+        }
+      });
+
+      generateBtn.addEventListener("click", generateFromInput);
+      copyBtn.addEventListener("click", copyCode);
+
+      window.addEventListener("hashchange", applySecretFromUrl);
+      document.addEventListener("visibilitychange", function () {
+        if (!document.hidden && currentSecret) {
+          updateCountdown();
+        }
+      });
+
+      applySecretFromUrl();
     })();
   </script>
 </body>
