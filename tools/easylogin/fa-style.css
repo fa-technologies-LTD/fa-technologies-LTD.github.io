@@ -545,92 +545,45 @@ body::before {
   font-weight: 800;
 }
 
-.promo-lines {
+/* One scannable spec row carries the whole offer: coverage and price anchor. */
+.promo-specs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  margin: 14px 0 20px;
   color: var(--muted);
-  font-size: 0.98rem;
-  line-height: 1.55;
-  font-weight: 500;
-}
-
-.promo-lines strong {
-  color: var(--text);
+  font-size: 0.92rem;
   font-weight: 600;
 }
 
-/* Three proof points that carry the offer: speed, risk reversal, price clarity. */
-.promo-benefits {
-  list-style: none;
-  margin: 18px 0 20px;
-  padding: 0;
-  display: grid;
-  gap: 12px;
-}
-
-.promo-benefit {
-  display: flex;
-  align-items: flex-start;
-  gap: 11px;
-}
-
-.benefit-ico {
-  width: 30px;
-  height: 30px;
-  flex-shrink: 0;
-  border-radius: 10px;
-  border: 1px solid rgba(5, 212, 113, 0.28);
-  background: rgba(5, 212, 113, 0.1);
-  color: var(--primary);
+.promo-specs span {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  gap: 14px;
 }
 
-.benefit-ico svg {
-  width: 16px;
-  height: 16px;
-}
-
-.benefit-text {
-  color: var(--muted);
-  font-size: 0.9rem;
-  line-height: 1.45;
-  font-weight: 500;
-  padding-top: 3px;
-}
-
-.benefit-text strong {
-  color: var(--text);
-  font-weight: 700;
-}
-
-/* The guarantee sits at the button, not in the headline: it answers the last
-   hesitation at the exact moment it shows up. */
-.promo-guarantee {
-  display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  margin: 2px 0 0;
-  padding: 11px 13px;
-  border-radius: 14px;
-  border: 1px solid rgba(5, 212, 113, 0.22);
-  background: rgba(5, 212, 113, 0.06);
-  color: var(--muted);
-  font-size: 0.84rem;
-  line-height: 1.45;
-  font-weight: 500;
-}
-
-.promo-guarantee strong {
-  color: var(--primary);
-  font-weight: 700;
-}
-
-.guarantee-ico {
-  width: 17px;
-  height: 17px;
+.promo-specs span + span::before {
+  content: "";
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(5, 212, 113, 0.55);
   flex-shrink: 0;
-  margin-top: 1px;
+}
+
+.promo-specs .spec-price {
   color: var(--primary);
+  font-weight: 700;
+}
+
+/* The guarantee answers the last hesitation right at the button. */
+.promo-guarantee {
+  margin: 0;
+  text-align: center;
+  color: var(--dim);
+  font-size: 0.78rem;
+  font-weight: 500;
 }
 
 /* Secondary path: a text link, not a second button, so it never competes with
@@ -816,41 +769,18 @@ body::before {
     margin-bottom: 8px;
   }
 
-  .promo-lines {
-    font-size: 0.84rem;
+  .promo-specs {
+    gap: 6px 11px;
+    margin: 11px 0 15px;
+    font-size: 0.83rem;
   }
 
-  .promo-benefits {
-    margin: 14px 0 16px;
-    gap: 10px;
-  }
-
-  .benefit-ico {
-    width: 27px;
-    height: 27px;
-    border-radius: 9px;
-  }
-
-  .benefit-ico svg {
-    width: 14px;
-    height: 14px;
-  }
-
-  .benefit-text {
-    font-size: 0.82rem;
-    padding-top: 2px;
+  .promo-specs span {
+    gap: 11px;
   }
 
   .promo-guarantee {
-    gap: 8px;
-    padding: 10px 11px;
-    border-radius: 12px;
-    font-size: 0.78rem;
-  }
-
-  .guarantee-ico {
-    width: 15px;
-    height: 15px;
+    font-size: 0.72rem;
   }
 
   .promo-alt {
