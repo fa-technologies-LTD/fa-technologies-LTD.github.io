@@ -499,50 +499,15 @@ body::before {
   z-index: 1;
 }
 
-/* Small "this is a live product" pill above the headline. */
-.promo-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  margin-bottom: 14px;
-  padding: 6px 12px;
-  border-radius: var(--radius-pill);
-  border: 1px solid rgba(5, 212, 113, 0.3);
-  background: rgba(5, 212, 113, 0.09);
-  color: var(--primary);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  line-height: 1;
-}
-
-.promo-badge-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--primary);
-  flex-shrink: 0;
-  animation: live-pulse 2.2s ease-in-out infinite;
-}
-
-/* Names the reader's situation before the offer lands, so the headline reads as
-   an answer rather than an ad. */
-.promo-problem {
-  color: var(--dim);
-  font-size: 0.92rem;
-  line-height: 1.4;
-  font-weight: 500;
-  margin-bottom: 7px;
-}
-
+/* Deliberately conversational rather than display-loud: the offer is quiet and
+   the button does the asking. */
 .promo-title {
-  font-size: clamp(1.95rem, 7.6vw, 2.8rem);
-  line-height: 0.94;
-  letter-spacing: -0.025em;
-  margin-bottom: 12px;
+  font-size: clamp(1.08rem, 3.8vw, 1.28rem);
+  line-height: 1.4;
+  letter-spacing: -0.008em;
+  margin-bottom: 2px;
   color: #f4f9f7;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 /* One scannable spec row carries the whole offer: coverage and price anchor. */
@@ -586,31 +551,25 @@ body::before {
   font-weight: 500;
 }
 
-/* Secondary path: a text link, not a second button, so it never competes with
-   the one action this panel is asking for. */
+/* Secondary path to the accounts shop: a quiet one-liner, never a second button,
+   so it can't compete with the one action this panel is asking for. */
 .promo-alt {
-  margin: 14px 0 0;
+  display: block;
+  margin: 15px 0 0;
   text-align: center;
   color: var(--dim);
   font-size: 0.82rem;
-  font-weight: 500;
-}
-
-.promo-alt a {
-  color: var(--muted);
   font-weight: 600;
-  text-decoration: underline;
-  text-decoration-color: rgba(5, 212, 113, 0.4);
-  text-underline-offset: 3px;
-  transition: color 180ms ease, text-decoration-color 180ms ease;
+  letter-spacing: 0.005em;
+  text-decoration: none;
+  transition: color 180ms ease;
 }
 
-.promo-alt a:hover {
+.promo-alt:hover {
   color: var(--primary);
-  text-decoration-color: var(--primary);
 }
 
-.promo-alt a:focus-visible {
+.promo-alt:focus-visible {
   outline: 2px solid rgba(5, 212, 113, 0.65);
   outline-offset: 3px;
   border-radius: 4px;
@@ -664,18 +623,6 @@ body::before {
   }
   50% {
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.38), 0 0 22px rgba(5, 212, 113, 0.2);
-  }
-}
-
-@keyframes live-pulse {
-  0%,
-  100% {
-    opacity: 1;
-    box-shadow: 0 0 0 0 rgba(5, 212, 113, 0.45);
-  }
-  50% {
-    opacity: 0.65;
-    box-shadow: 0 0 0 5px rgba(5, 212, 113, 0);
   }
 }
 
@@ -752,31 +699,22 @@ body::before {
     margin-bottom: 18px;
   }
 
-  .promo-badge {
-    margin-bottom: 11px;
-    padding: 5px 10px;
-    font-size: 0.65rem;
-    letter-spacing: 0.09em;
-  }
-
-  .promo-problem {
-    font-size: 0.82rem;
-    margin-bottom: 5px;
-  }
-
   .promo-title {
-    font-size: clamp(1.35rem, 8.5vw, 2rem);
-    margin-bottom: 8px;
+    font-size: 0.98rem;
+    line-height: 1.42;
   }
 
+  /* Stack on narrow screens so the bullet separator can't orphan onto its own line. */
   .promo-specs {
-    gap: 6px 11px;
-    margin: 11px 0 15px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    margin: 10px 0 15px;
     font-size: 0.83rem;
   }
 
-  .promo-specs span {
-    gap: 11px;
+  .promo-specs span + span::before {
+    display: none;
   }
 
   .promo-guarantee {
