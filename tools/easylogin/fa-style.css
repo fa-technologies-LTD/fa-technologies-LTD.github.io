@@ -466,7 +466,7 @@ body::before {
 }
 
 .promo {
-  padding: 28px 20px 22px;
+  padding: 26px 20px 20px;
   margin-bottom: 24px;
   border-color: rgba(5, 212, 113, 0.44);
   background:
@@ -499,39 +499,174 @@ body::before {
   z-index: 1;
 }
 
-.promo-head {
-  margin-bottom: 22px;
+/* Small "this is a live product" pill above the headline. */
+.promo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 14px;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(5, 212, 113, 0.3);
+  background: rgba(5, 212, 113, 0.09);
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1;
 }
 
-.promo-kicker {
-  font-size: 0.9rem;
-  line-height: 1.2;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--primary);
-  font-weight: 700;
-  margin-bottom: 8px;
+.promo-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--primary);
+  flex-shrink: 0;
+  animation: live-pulse 2.2s ease-in-out infinite;
+}
+
+/* Names the reader's situation before the offer lands, so the headline reads as
+   an answer rather than an ad. */
+.promo-problem {
+  color: var(--dim);
+  font-size: 0.92rem;
+  line-height: 1.4;
+  font-weight: 500;
+  margin-bottom: 7px;
 }
 
 .promo-title {
-  font-size: clamp(2.1rem, 8.3vw, 3.1rem);
+  font-size: clamp(1.95rem, 7.6vw, 2.8rem);
   line-height: 0.94;
   letter-spacing: -0.025em;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   color: #f4f9f7;
   font-weight: 800;
 }
 
 .promo-lines {
   color: var(--muted);
-  font-size: 1rem;
-  line-height: 1.5;
+  font-size: 0.98rem;
+  line-height: 1.55;
   font-weight: 500;
 }
 
 .promo-lines strong {
   color: var(--text);
   font-weight: 600;
+}
+
+/* Three proof points that carry the offer: speed, risk reversal, price clarity. */
+.promo-benefits {
+  list-style: none;
+  margin: 18px 0 20px;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.promo-benefit {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+}
+
+.benefit-ico {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  border: 1px solid rgba(5, 212, 113, 0.28);
+  background: rgba(5, 212, 113, 0.1);
+  color: var(--primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.benefit-ico svg {
+  width: 16px;
+  height: 16px;
+}
+
+.benefit-text {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  font-weight: 500;
+  padding-top: 3px;
+}
+
+.benefit-text strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+/* The guarantee sits at the button, not in the headline: it answers the last
+   hesitation at the exact moment it shows up. */
+.promo-guarantee {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 2px 0 0;
+  padding: 11px 13px;
+  border-radius: 14px;
+  border: 1px solid rgba(5, 212, 113, 0.22);
+  background: rgba(5, 212, 113, 0.06);
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+  font-weight: 500;
+}
+
+.promo-guarantee strong {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.guarantee-ico {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--primary);
+}
+
+/* Secondary path: a text link, not a second button, so it never competes with
+   the one action this panel is asking for. */
+.promo-alt {
+  margin: 14px 0 0;
+  text-align: center;
+  color: var(--dim);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.promo-alt a {
+  color: var(--muted);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: rgba(5, 212, 113, 0.4);
+  text-underline-offset: 3px;
+  transition: color 180ms ease, text-decoration-color 180ms ease;
+}
+
+.promo-alt a:hover {
+  color: var(--primary);
+  text-decoration-color: var(--primary);
+}
+
+.promo-alt a:focus-visible {
+  outline: 2px solid rgba(5, 212, 113, 0.65);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.btn-ico {
+  width: 19px;
+  height: 19px;
+  flex-shrink: 0;
 }
 
 .wa-inline {
@@ -576,6 +711,18 @@ body::before {
   }
   50% {
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.38), 0 0 22px rgba(5, 212, 113, 0.2);
+  }
+}
+
+@keyframes live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(5, 212, 113, 0.45);
+  }
+  50% {
+    opacity: 0.65;
+    box-shadow: 0 0 0 5px rgba(5, 212, 113, 0);
   }
 }
 
@@ -652,21 +799,63 @@ body::before {
     margin-bottom: 18px;
   }
 
-  .promo-head {
-    margin-bottom: 16px;
+  .promo-badge {
+    margin-bottom: 11px;
+    padding: 5px 10px;
+    font-size: 0.65rem;
+    letter-spacing: 0.09em;
   }
 
-  .promo-kicker {
-    font-size: 0.74rem;
+  .promo-problem {
+    font-size: 0.82rem;
+    margin-bottom: 5px;
   }
 
   .promo-title {
     font-size: clamp(1.35rem, 8.5vw, 2rem);
-    margin-bottom: 6px;
+    margin-bottom: 8px;
   }
 
   .promo-lines {
     font-size: 0.84rem;
+  }
+
+  .promo-benefits {
+    margin: 14px 0 16px;
+    gap: 10px;
+  }
+
+  .benefit-ico {
+    width: 27px;
+    height: 27px;
+    border-radius: 9px;
+  }
+
+  .benefit-ico svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .benefit-text {
+    font-size: 0.82rem;
+    padding-top: 2px;
+  }
+
+  .promo-guarantee {
+    gap: 8px;
+    padding: 10px 11px;
+    border-radius: 12px;
+    font-size: 0.78rem;
+  }
+
+  .guarantee-ico {
+    width: 15px;
+    height: 15px;
+  }
+
+  .promo-alt {
+    margin-top: 12px;
+    font-size: 0.78rem;
   }
 
   .message-btn {
