@@ -374,6 +374,30 @@
             display: block;
         }
 
+        .confirm-panel {
+            background: rgba(255, 196, 0, 0.1);
+            border: 1px solid rgba(255, 196, 0, 0.45);
+            color: #ffd24d;
+            padding: 12px 16px;
+            margin-top: 16px;
+            font-size: 12px;
+            line-height: 1.5;
+            text-shadow: 0 0 5px rgba(255, 196, 0, 0.35);
+        }
+
+        .btn-confirm {
+            margin-top: 10px;
+            width: 100%;
+            border-color: #ffd24d;
+            color: #ffd24d;
+            text-shadow: 0 0 5px rgba(255, 196, 0, 0.4);
+        }
+
+        .btn-confirm:hover {
+            background: rgba(255, 196, 0, 0.15);
+            box-shadow: 0 0 12px rgba(255, 196, 0, 0.35);
+        }
+
         .info-box {
             background: rgba(0, 255, 0, 0.08);
             border-left: 4px solid #00ff00;
@@ -461,7 +485,8 @@
             <div class="section">
                 <div class="section-title">>>> PASTE DATA <<<</div>
                 <div class="info-box">
-                    $ Parse any credential format. Detects platform & generates clean CSV
+                    $ Parse any credential format. Detects platform & generates clean CSV.<br>
+                    $ Also auto-detects unlabelled blocks (@handle / email / password / country) — confirm the mapping before download.
                 </div>
                 <textarea id="inputText" placeholder="$ paste credential data here...&#10;&#10;Supports:&#10;• Twitter/X (with email-password, 2FA)&#10;• TikTok (with email)&#10;• Facebook (with 2FA)&#10;• And more..."></textarea>
                 <div class="controls">
@@ -489,6 +514,10 @@
                 </div>
                 <div class="stats" id="stats" style="display: none;">
                     <strong id="statsText"></strong>
+                </div>
+                <div class="confirm-panel" id="confirmPanel" style="display: none;">
+                    <div id="confirmText"></div>
+                    <button class="btn-confirm" id="confirmBtn" onclick="confirmMapping()">✓ Confirm mapping &amp; enable download</button>
                 </div>
                 <button class="btn-download" id="downloadBtn" onclick="downloadCSV()" disabled style="margin-top: 16px;">
                     ⬇️  DOWNLOAD CSV
@@ -531,7 +560,7 @@
                 });
 
                 // Define priority order
-                const priorityOrder = ['profile_link', 'username', 'password', 'email', '2fa_link', 'mail_pass', 'email_password', 'backup_email', 'secondary_email', 'phone'];
+                const priorityOrder = ['profile_link', 'username', 'password', 'email', 'email_password', '2fa_link', 'mail_pass', 'secondary_email', 'secondary_email_password', 'backup_email', 'backup_email_password', 'phone', 'country', 'security_question', 'security_answer', 'platform', 'status', 'creation_date'];
                 csvHeaders = [];
 
                 // Add headers in priority order
@@ -554,7 +583,18 @@
                 successMsg.classList.add('show');
 
                 renderWarnings(parseWarnings);
-                document.getElementById('downloadBtn').disabled = parsedData.length === 0;
+
+                // Unlabelled input is inferred by shape, so hold the download until the
+                // operator confirms the mapping is right (blocking confirm).
+                const hasRows = parsedData.length > 0;
+                const autoDetectedCount = result.autoDetectedCount || 0;
+                if (hasRows && autoDetectedCount > 0) {
+                    showConfirmPanel(autoDetectedCount);
+                    document.getElementById('downloadBtn').disabled = true;
+                } else {
+                    hideConfirmPanel();
+                    document.getElementById('downloadBtn').disabled = !hasRows;
+                }
             } catch (error) {
                 errorMsg.textContent = `❌ [ERROR] ${error.message}`;
                 errorMsg.classList.add('show');
@@ -566,6 +606,7 @@
             const accounts = [];
             const urls = [];
             const credentialBlocks = [];
+            const autoDetectedBlocks = [];
             const lines = input.split('\n');
 
             let currentBlock = null;
@@ -581,26 +622,63 @@
                     pendingField = null;
                 }
 
-                if (currentBlock && Object.keys(currentBlock.fields).length > 0) {
-                    credentialBlocks.push(currentBlock);
+                if (currentBlock) {
+                    const hasLabeled = Object.keys(currentBlock.fields).length > 0;
+                    const rawLines = currentBlock.rawLines || [];
+
+                    if (!hasLabeled && rawLines.length > 0) {
+                        // A block made only of separator-less lines (e.g. @handle / email /
+                        // password / country) is inferred by shape. Only unlabelled blocks are
+                        // auto-detected, so labelled pastes are never reinterpreted.
+                        const classified = classifyUnlabeledBlock(rawLines);
+                        if (Object.keys(classified.fields).length > 0) {
+                            currentBlock.fields = classified.fields;
+                            currentBlock.autoDetected = true;
+                            autoDetectedBlocks.push(currentBlock);
+                        }
+                    } else if (hasLabeled && rawLines.length > 0) {
+                        // Stray lines inside an otherwise labelled block stay "unrecognized".
+                        rawLines.forEach(raw => unrecognizedLines.push(raw.lineNumber));
+                    }
+
+                    if (Object.keys(currentBlock.fields).length > 0) {
+                        credentialBlocks.push(currentBlock);
+                    }
                 }
                 currentBlock = null;
             };
 
             const ensureCurrentBlock = (lineNumber) => {
                 if (!currentBlock) {
-                    currentBlock = { startLine: lineNumber, fields: {} };
+                    currentBlock = { startLine: lineNumber, fields: {}, rawLines: [], lastSetKey: null };
                 }
             };
 
             const setCurrentField = (key, value, lineNumber) => {
                 ensureCurrentBlock(lineNumber);
 
-                if (Object.prototype.hasOwnProperty.call(currentBlock.fields, key)) {
-                    warnings.push(`W104 line ${lineNumber}: Duplicate key "${key}" in the same block; latest value kept.`);
+                let finalKey = key;
+                // A bare "pass:"/"password:" line belongs to the email named on the line
+                // right before it, so a secondary (recovery) email's password is never
+                // mistaken for the account password and silently overwritten.
+                if (key === 'password') {
+                    const prev = currentBlock.lastSetKey;
+                    const f = currentBlock.fields;
+                    if (prev === 'secondary_email' && !f.secondary_email_password) {
+                        finalKey = 'secondary_email_password';
+                    } else if (prev === 'backup_email' && !f.backup_email_password) {
+                        finalKey = 'backup_email_password';
+                    } else if (prev === 'email' && f.password && !f.email_password) {
+                        finalKey = 'email_password';
+                    }
                 }
 
-                currentBlock.fields[key] = value;
+                if (Object.prototype.hasOwnProperty.call(currentBlock.fields, finalKey)) {
+                    warnings.push(`W104 line ${lineNumber}: Duplicate key "${finalKey}" in the same block; latest value kept.`);
+                }
+
+                currentBlock.fields[finalKey] = value;
+                currentBlock.lastSetKey = finalKey;
             };
 
             for (let i = 0; i < lines.length; i++) {
@@ -678,7 +756,10 @@
                     continue;
                 }
 
-                unrecognizedLines.push(lineNumber);
+                // Not labelled, not a URL: keep it on the block so a wholly unlabelled
+                // block can be inferred by shape when it closes.
+                ensureCurrentBlock(lineNumber);
+                currentBlock.rawLines.push({ line, lineNumber });
             }
 
             closeCurrentBlock();
@@ -752,7 +833,87 @@
                 warnings.push(`W115: Ignored ${unusedNonProfileCount} standalone non-profile link(s).`);
             }
 
-            return { accounts, warnings };
+            return { accounts, warnings, autoDetectedCount: autoDetectedBlocks.length };
+        }
+
+        // Infer the fields of an unlabelled block (no "key: value" lines) from the shape of
+        // each line: an address is an email, "@name" is a username, a plain word after the
+        // core fields is a country, and the rest are passwords routed to the nearest email.
+        function classifyUnlabeledBlock(rawLines) {
+            const fields = {};
+            const order = [];
+
+            const place = (key, value) => {
+                if (!fields[key]) {
+                    fields[key] = value;
+                    order.push(key);
+                    return true;
+                }
+                return false;
+            };
+
+            const placePassword = (value) => {
+                const last = order[order.length - 1];
+                if (last === 'secondary_email' && !fields.secondary_email_password) {
+                    return place('secondary_email_password', value);
+                }
+                if (last === 'backup_email' && !fields.backup_email_password) {
+                    return place('backup_email_password', value);
+                }
+                if (last === 'email' && fields.password && !fields.email_password) {
+                    return place('email_password', value);
+                }
+                if (!fields.password) return place('password', value);
+                if (!fields.secondary_email_password) return place('secondary_email_password', value);
+                return false;
+            };
+
+            for (const raw of rawLines) {
+                const value = (raw.line || '').trim();
+                if (!value) continue;
+
+                if (looksLikeEmailValue(value)) {
+                    if (!fields.email) place('email', value);
+                    else if (!fields.secondary_email) place('secondary_email', value);
+                    else place('backup_email', value);
+                    continue;
+                }
+
+                if (value.startsWith('@') && looksLikeHandle(value)) {
+                    if (!place('username', value)) placePassword(value);
+                    continue;
+                }
+
+                // A plain word that arrives after username + password is a country/nationality.
+                if (fields.username && fields.password && looksLikeCountryWord(value) && !fields.country) {
+                    place('country', value);
+                    continue;
+                }
+
+                // A clean handle-shaped token on an otherwise unnamed first line is the username.
+                if (!fields.username && looksLikeHandle(value)) {
+                    place('username', value);
+                    continue;
+                }
+
+                placePassword(value);
+            }
+
+            return { fields, order };
+        }
+
+        function looksLikeEmailValue(str) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(str);
+        }
+
+        function looksLikeHandle(str) {
+            // "@name" or a bare alphanumeric/._ token with no spaces or trailing symbols.
+            return /^@?[A-Za-z0-9._]+$/.test(str);
+        }
+
+        function looksLikeCountryWord(str) {
+            // Letters, spaces and a few name punctuation marks only; no digits or symbols.
+            return /^[A-Za-z][A-Za-z .'-]{1,24}$/.test(str);
         }
 
         function findBestProfileLink(fields, links) {
@@ -914,6 +1075,26 @@
                 'mail password': 'mail_pass',
                 'secondary email': 'secondary_email',
                 'secondary_email': 'secondary_email',
+                'sec email': 'secondary_email',
+                'sec-email': 'secondary_email',
+                'sec_email': 'secondary_email',
+                'secondary-email': 'secondary_email',
+                'sec email password': 'secondary_email_password',
+                'sec-email password': 'secondary_email_password',
+                'sec email pass': 'secondary_email_password',
+                'sec_email_pass': 'secondary_email_password',
+                'sec pass': 'secondary_email_password',
+                'sec-pass': 'secondary_email_password',
+                'sec_pass': 'secondary_email_password',
+                'secondary password': 'secondary_email_password',
+                'secondary_password': 'secondary_email_password',
+                'secondary email password': 'secondary_email_password',
+                'backup password': 'backup_email_password',
+                'backup_password': 'backup_email_password',
+                'backup email password': 'backup_email_password',
+                'country': 'country',
+                'nationality': 'country',
+                'region': 'country',
                 '2fa': '2fa_link',
                 '2fa_link': '2fa_link',
                 '2fa link': '2fa_link',
@@ -1009,6 +1190,23 @@
 
             warningMsg.textContent = text;
             warningMsg.classList.add('show');
+        }
+
+        function showConfirmPanel(count) {
+            const panel = document.getElementById('confirmPanel');
+            const text = document.getElementById('confirmText');
+            const columns = csvHeaders.map(formatHeaderName).join(', ');
+            text.textContent = `⚠️ Auto-detected ${count} unlabelled block(s). Mapped columns: ${columns}. Check the preview, then confirm to enable download.`;
+            panel.style.display = 'block';
+        }
+
+        function hideConfirmPanel() {
+            document.getElementById('confirmPanel').style.display = 'none';
+        }
+
+        function confirmMapping() {
+            hideConfirmPanel();
+            document.getElementById('downloadBtn').disabled = parsedData.length === 0;
         }
 
         function formatHeaderName(header) {
@@ -1121,6 +1319,7 @@
             document.getElementById('errorMessage').classList.remove('show');
             document.getElementById('successMessage').classList.remove('show');
             document.getElementById('warningMessage').classList.remove('show');
+            hideConfirmPanel();
             parsedData = [];
             csvHeaders = [];
             parseWarnings = [];
