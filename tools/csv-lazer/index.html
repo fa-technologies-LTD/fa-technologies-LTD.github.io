@@ -17,455 +17,837 @@
     <link rel="canonical" href="https://fastaccs.com/tools/csv-lazer/">
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='22' font-family='monospace' font-weight='bold' fill='%2300ff66'>%3E_</text></svg>">
     <style>
+        :root {
+            color-scheme: dark;
+            --bg: #050817;
+            --surface: #0a1028;
+            --surface-strong: #0d1533;
+            --surface-soft: #101b3d;
+            --line: rgba(98, 255, 158, 0.2);
+            --line-strong: rgba(98, 255, 158, 0.48);
+            --green: #4cff91;
+            --green-strong: #00ef62;
+            --green-soft: rgba(76, 255, 145, 0.1);
+            --text: #edfff3;
+            --muted: #97b6a3;
+            --warning: #ffd166;
+            --danger: #ff6b8a;
+            --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+        }
+
         * {
-            margin: 0;
-            padding: 0;
             box-sizing: border-box;
         }
 
+        html {
+            min-width: 320px;
+            background: var(--bg);
+        }
+
         body {
-            font-family: 'Courier New', monospace;
-            background: #0a0e27;
+            margin: 0;
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            color: #00ff00;
+            padding: 24px;
+            background:
+                radial-gradient(circle at 12% 0%, rgba(0, 239, 98, 0.1), transparent 30rem),
+                radial-gradient(circle at 90% 18%, rgba(74, 100, 255, 0.13), transparent 32rem),
+                var(--bg);
+            color: var(--text);
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        }
+
+        button,
+        textarea {
+            font: inherit;
+        }
+
+        button,
+        a {
+            -webkit-tap-highlight-color: transparent;
         }
 
         .shell {
-            width: 100%;
-            max-width: 1400px;
+            width: min(100%, 1480px);
+            margin: 0 auto;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+
+        .back-link,
+        .privacy-badge {
+            display: inline-flex;
+            align-items: center;
+            min-height: 38px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: rgba(10, 16, 40, 0.78);
+            color: var(--muted);
+            font-size: 11px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
         }
 
         .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            margin-bottom: 10px;
-            color: #7ef9b3;
+            padding: 0 14px;
+            color: var(--green);
             text-decoration: none;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            border: 1px solid rgba(0, 255, 136, 0.35);
-            padding: 7px 10px;
-            background: rgba(0, 255, 136, 0.08);
+            transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
         }
 
         .back-link:hover {
-            background: rgba(0, 255, 136, 0.16);
-            border-color: rgba(0, 255, 136, 0.6);
+            border-color: var(--line-strong);
+            background: var(--green-soft);
+            color: var(--text);
+        }
+
+        .privacy-badge {
+            gap: 8px;
+            padding: 0 13px;
+        }
+
+        .privacy-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 14px rgba(76, 255, 145, 0.8);
         }
 
         .container {
-            background: #0f1330;
-            border-radius: 0;
-            box-shadow: 0 0 40px rgba(0, 255, 0, 0.2), inset 0 0 20px rgba(0, 255, 0, 0.05);
-            max-width: 1400px;
-            width: 100%;
             overflow: hidden;
-            border: 2px solid rgba(0, 255, 0, 0.3);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            background: rgba(8, 13, 34, 0.94);
+            box-shadow: var(--shadow);
         }
 
         .header {
-            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
-            color: #00ff00;
-            padding: 40px;
-            text-align: center;
-            position: relative;
-            border-bottom: 2px solid rgba(0, 255, 0, 0.4);
-            box-shadow: 0 0 30px rgba(0, 255, 0, 0.15);
+            padding: 30px 34px 28px;
+            border-bottom: 1px solid var(--line);
+            background:
+                linear-gradient(135deg, rgba(76, 255, 145, 0.08), transparent 48%),
+                linear-gradient(180deg, rgba(16, 27, 61, 0.96), rgba(8, 13, 34, 0.96));
+        }
+
+        .eyebrow {
+            margin-bottom: 10px;
+            color: var(--green);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
         }
 
         .header h1 {
-            font-size: 36px;
-            font-weight: 700;
-            letter-spacing: 2px;
-            margin-bottom: 8px;
-            text-shadow: 0 0 10px rgba(0, 255, 0, 0.6), 0 0 20px rgba(0, 255, 0, 0.3);
+            max-width: 900px;
+            margin: 0;
+            color: var(--text);
+            font-size: clamp(28px, 4vw, 46px);
+            line-height: 1.05;
+            letter-spacing: -0.05em;
         }
 
-        .header p {
-            font-size: 14px;
-            opacity: 0.8;
-            text-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
+        .header-copy {
+            max-width: 780px;
+            margin: 14px 0 0;
+            color: var(--muted);
+            font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+            font-size: 15px;
+            line-height: 1.6;
         }
 
-        .logo {
-            display: inline-block;
-            width: 40px;
-            height: 40px;
-            background: rgba(0, 255, 0, 0.1);
-            border-radius: 0;
-            margin-right: 12px;
-            vertical-align: middle;
-            border: 2px solid rgba(0, 255, 0, 0.5);
+        .header-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .header-chip {
+            display: inline-flex;
+            align-items: center;
+            min-height: 30px;
+            padding: 0 10px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: rgba(0, 0, 0, 0.14);
+            color: #b8d4c1;
+            font-size: 11px;
         }
 
         .content {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            padding: 40px;
+            grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+            align-items: stretch;
+            gap: 20px;
+            padding: 22px;
         }
 
-        @media (max-width: 1024px) {
-            .content {
-                grid-template-columns: 1fr;
-                gap: 30px;
-            }
+        .panel {
+            min-width: 0;
+            padding: 20px;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: linear-gradient(180deg, rgba(13, 21, 51, 0.98), rgba(8, 14, 34, 0.98));
         }
 
-        .section {
+        .section,
+        .output-section {
             display: flex;
+            min-width: 0;
             flex-direction: column;
         }
 
-        .section-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #00ff00;
-            margin-bottom: 16px;
+        .panel-heading {
             display: flex;
-            align-items: center;
-            gap: 8px;
-            text-shadow: 0 0 8px rgba(0, 255, 0, 0.5);
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 16px;
         }
 
-        .section-title::before {
-            content: '';
-            width: 4px;
-            height: 20px;
-            background: #00ff00;
-            border-radius: 0;
-            box-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+        .heading-copy {
+            display: flex;
+            min-width: 0;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .step-number {
+            display: inline-grid;
+            width: 32px;
+            height: 32px;
+            flex: 0 0 32px;
+            place-items: center;
+            border: 1px solid var(--line-strong);
+            border-radius: 9px;
+            background: var(--green-soft);
+            color: var(--green);
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .panel-heading h2 {
+            margin: 1px 0 5px;
+            color: var(--text);
+            font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+            font-size: 18px;
+            line-height: 1.25;
+        }
+
+        .panel-heading p {
+            margin: 0;
+            color: var(--muted);
+            font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            min-height: 30px;
+            flex: 0 0 auto;
+            align-items: center;
+            padding: 0 10px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            color: var(--muted);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .status-badge.ready {
+            border-color: var(--line-strong);
+            background: var(--green-soft);
+            color: var(--green);
+        }
+
+        .status-badge.warning {
+            border-color: rgba(255, 209, 102, 0.5);
+            background: rgba(255, 209, 102, 0.09);
+            color: var(--warning);
+        }
+
+        .status-badge.error {
+            border-color: rgba(255, 107, 138, 0.5);
+            background: rgba(255, 107, 138, 0.09);
+            color: var(--danger);
+        }
+
+        .info-box {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .format-pill {
+            display: inline-flex;
+            min-height: 28px;
+            align-items: center;
+            padding: 0 9px;
+            border: 1px solid rgba(151, 182, 163, 0.2);
+            border-radius: 7px;
+            background: rgba(151, 182, 163, 0.05);
+            color: #a9c5b2;
+            font-size: 10px;
         }
 
         textarea {
+            width: 100%;
+            min-height: 420px;
             flex: 1;
-            min-height: 400px;
-            padding: 16px;
-            border: 2px solid rgba(0, 255, 0, 0.3);
-            border-radius: 0;
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
             resize: vertical;
-            transition: all 0.3s;
-            background: #0a0e27;
-            color: #00ff00;
+            padding: 16px;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            outline: none;
+            background: #070c20;
+            color: var(--green);
+            caret-color: var(--green);
+            font-size: 12px;
+            line-height: 1.55;
+            transition: border-color 160ms ease, box-shadow 160ms ease;
         }
 
         textarea:focus {
-            outline: none;
-            border-color: #00ff00;
-            box-shadow: 0 0 0 3px rgba(0, 255, 0, 0.2), 0 0 20px rgba(0, 255, 0, 0.3);
+            border-color: var(--green-strong);
+            box-shadow: 0 0 0 3px rgba(0, 239, 98, 0.13);
         }
 
         textarea::placeholder {
-            color: #00aa00;
-            opacity: 0.6;
+            color: #5c8369;
+            opacity: 1;
         }
 
         .controls {
-            display: flex;
-            gap: 12px;
-            margin-top: 16px;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 10px;
+            margin-top: 12px;
         }
 
         button {
-            padding: 12px 24px;
-            border: 2px solid #00ff00;
-            border-radius: 0;
-            font-size: 14px;
-            font-weight: 600;
+            min-height: 46px;
+            border: 1px solid var(--line-strong);
+            border-radius: 9px;
+            outline: none;
+            background: rgba(76, 255, 145, 0.08);
+            color: var(--green);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
             cursor: pointer;
-            transition: all 0.3s;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            background: #0a0e27;
-            color: #00ff00;
-            text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+            transition: transform 140ms ease, border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
         }
 
-        .btn-parse {
-            background: rgba(0, 255, 0, 0.1);
-            flex: 1;
+        button:hover:not(:disabled) {
+            border-color: var(--green);
+            background: rgba(76, 255, 145, 0.14);
+            box-shadow: 0 10px 26px rgba(0, 239, 98, 0.12);
+            transform: translateY(-1px);
         }
 
-        .btn-parse:hover {
-            background: rgba(0, 255, 0, 0.2);
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5), inset 0 0 10px rgba(0, 255, 0, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .btn-parse:active {
+        button:active:not(:disabled) {
             transform: translateY(0);
         }
 
-        .btn-download {
-            background: rgba(0, 255, 0, 0.1);
-            flex: 1;
+        button:focus-visible,
+        .back-link:focus-visible {
+            outline: 3px solid rgba(76, 255, 145, 0.34);
+            outline-offset: 3px;
         }
 
-        .btn-download:hover {
-            background: rgba(0, 255, 0, 0.2);
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5), inset 0 0 10px rgba(0, 255, 0, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .btn-download:active {
-            transform: translateY(0);
-        }
-
-        .btn-download:disabled {
-            opacity: 0.3;
+        button:disabled {
             cursor: not-allowed;
+            opacity: 0.38;
             box-shadow: none;
         }
 
+        .btn-parse {
+            width: 100%;
+            min-width: 0;
+            background: var(--green-strong);
+            color: #031108;
+            text-shadow: none;
+        }
+
+        .btn-parse:hover:not(:disabled) {
+            background: #36ff82;
+            color: #020c05;
+        }
+
         .btn-clear {
-            background: rgba(0, 255, 0, 0.05);
-            border-color: rgba(0, 255, 0, 0.4);
-        }
-
-        .btn-clear:hover {
-            background: rgba(0, 255, 0, 0.15);
-            border-color: #00ff00;
-            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
-        }
-
-        .output-section {
-            display: flex;
-            flex-direction: column;
+            min-height: 32px;
+            padding: 0 11px;
+            border-color: rgba(151, 182, 163, 0.25);
+            background: transparent;
+            color: var(--muted);
+            font-size: 10px;
         }
 
         .preview-container {
-            flex: 1;
-            background: #0a0e27;
-            border-radius: 0;
-            border: 2px solid rgba(0, 255, 0, 0.3);
+            min-width: 0;
             overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: #070c20;
+        }
+
+        .preview-toolbar {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            min-height: 38px;
+            padding: 0 12px;
+            border-bottom: 1px solid var(--line);
+            color: var(--muted);
+            font-size: 10px;
+        }
+
+        .preview-container.has-results .preview-toolbar {
             display: flex;
-            flex-direction: column;
-            box-shadow: inset 0 0 10px rgba(0, 255, 0, 0.05);
+        }
+
+        .preview-toolbar strong {
+            color: var(--green);
+            font-weight: 700;
         }
 
         .table-wrapper {
-            flex: 1;
+            min-width: 0;
+            max-height: 430px;
             overflow: auto;
-            max-height: 400px;
+            scrollbar-color: rgba(76, 255, 145, 0.32) transparent;
         }
 
         .csv-preview {
             width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
-            font-family: 'Courier New', monospace;
+            min-width: 780px;
+            border-collapse: separate;
+            border-spacing: 0;
+            color: var(--text);
+            font-size: 11px;
         }
 
         .csv-preview thead {
-            background: rgba(0, 255, 0, 0.1);
-            color: #00ff00;
             position: sticky;
+            z-index: 2;
             top: 0;
-            border-bottom: 2px solid rgba(0, 255, 0, 0.4);
+            background: #101a3b;
+        }
+
+        .csv-preview th,
+        .csv-preview td {
+            padding: 12px;
+            text-align: left;
+            vertical-align: top;
+            border-right: 1px solid rgba(98, 255, 158, 0.1);
+            border-bottom: 1px solid rgba(98, 255, 158, 0.1);
         }
 
         .csv-preview th {
-            padding: 12px;
-            text-align: left;
-            font-weight: 600;
+            color: var(--green);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
             white-space: nowrap;
-            border-right: 1px solid rgba(0, 255, 0, 0.2);
-            text-shadow: 0 0 5px rgba(0, 255, 0, 0.4);
-        }
-
-        .csv-preview th:last-child {
-            border-right: none;
+            text-transform: uppercase;
         }
 
         .csv-preview td {
-            padding: 10px 12px;
-            border-bottom: 1px solid rgba(0, 255, 0, 0.1);
-            word-break: break-word;
-            max-width: 200px;
-            color: #00dd00;
+            max-width: 230px;
+            color: #c9f7d7;
+            line-height: 1.45;
+            overflow-wrap: anywhere;
         }
 
-        .csv-preview tbody tr:hover {
-            background: rgba(0, 255, 0, 0.08);
+        .csv-preview th:last-child,
+        .csv-preview td:last-child {
+            border-right: 0;
+        }
+
+        .csv-preview tbody tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .csv-preview tbody tr:hover td {
+            background: rgba(76, 255, 145, 0.045);
         }
 
         .empty-state {
             display: flex;
+            min-height: 420px;
             align-items: center;
             justify-content: center;
-            height: 100%;
-            color: #00aa00;
-            font-size: 14px;
-            text-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
+            padding: 36px;
+            text-align: center;
         }
 
-        .stats {
-            background: rgba(0, 255, 0, 0.08);
-            border: 1px solid rgba(0, 255, 0, 0.3);
-            border-radius: 0;
-            padding: 12px 16px;
-            margin-top: 16px;
+        .empty-icon {
+            display: grid;
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 14px;
+            place-items: center;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--green-soft);
+            color: var(--green);
+            font-size: 18px;
+        }
+
+        .empty-state strong {
+            display: block;
+            margin-bottom: 6px;
+            color: #c9e4d2;
+            font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+            font-size: 14px;
+        }
+
+        .empty-state span {
+            color: var(--muted);
+            font-family: Inter, ui-sans-serif, system-ui, sans-serif;
             font-size: 12px;
-            color: #00ff00;
-            text-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
+            line-height: 1.5;
+        }
+
+        .mobile-preview {
+            display: none;
+        }
+
+        .account-card {
+            min-width: 0;
+            overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: rgba(13, 21, 51, 0.82);
+        }
+
+        .account-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px 13px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .account-card-header strong {
+            min-width: 0;
+            overflow: hidden;
+            color: var(--text);
+            font-size: 12px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .account-card-number {
+            flex: 0 0 auto;
+            color: var(--green);
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+        .account-fields {
+            margin: 0;
+        }
+
+        .account-field {
+            display: grid;
+            grid-template-columns: minmax(88px, 0.42fr) minmax(0, 1fr);
+            gap: 10px;
+            padding: 10px 13px;
+            border-bottom: 1px solid rgba(98, 255, 158, 0.08);
+        }
+
+        .account-field:last-child {
+            border-bottom: 0;
+        }
+
+        .account-field dt {
+            color: var(--muted);
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .account-field dd {
+            min-width: 0;
+            margin: 0;
+            color: #c9f7d7;
+            font-size: 10px;
+            line-height: 1.45;
+            overflow-wrap: anywhere;
+        }
+
+        .stats,
+        .error-message,
+        .success-message,
+        .warning-message,
+        .confirm-panel {
+            margin-top: 12px;
+            padding: 11px 13px;
+            border: 1px solid var(--line);
+            border-radius: 9px;
+            background: rgba(76, 255, 145, 0.06);
+            color: var(--green);
+            font-size: 10px;
+            line-height: 1.55;
         }
 
         .stats strong {
-            color: #00ff00;
-            text-shadow: 0 0 8px rgba(0, 255, 0, 0.6);
+            color: var(--green);
         }
 
-        .error-message {
-            background: rgba(255, 0, 100, 0.1);
-            border: 1px solid rgba(255, 0, 100, 0.4);
-            color: #ff0064;
-            padding: 12px 16px;
-            border-radius: 0;
-            margin-top: 12px;
-            font-size: 12px;
+        .message-stack:empty {
             display: none;
-            text-shadow: 0 0 5px rgba(255, 0, 100, 0.4);
         }
 
-        .error-message.show {
-            display: block;
-        }
-
-        .success-message {
-            background: rgba(0, 255, 0, 0.1);
-            border: 1px solid rgba(0, 255, 0, 0.4);
-            color: #00ff00;
-            padding: 12px 16px;
-            border-radius: 0;
-            margin-top: 12px;
-            font-size: 12px;
-            display: none;
-            text-shadow: 0 0 5px rgba(0, 255, 0, 0.4);
-        }
-
-        .success-message.show {
-            display: block;
-        }
-
+        .error-message,
+        .success-message,
         .warning-message {
-            background: rgba(255, 196, 0, 0.1);
-            border: 1px solid rgba(255, 196, 0, 0.45);
-            color: #ffd24d;
-            padding: 12px 16px;
-            border-radius: 0;
-            margin-top: 12px;
-            font-size: 12px;
             display: none;
-            text-shadow: 0 0 5px rgba(255, 196, 0, 0.35);
-            line-height: 1.45;
-            white-space: pre-line;
         }
 
+        .error-message.show,
+        .success-message.show,
         .warning-message.show {
             display: block;
         }
 
+        .error-message {
+            border-color: rgba(255, 107, 138, 0.42);
+            background: rgba(255, 107, 138, 0.08);
+            color: var(--danger);
+        }
+
+        .warning-message,
         .confirm-panel {
-            background: rgba(255, 196, 0, 0.1);
-            border: 1px solid rgba(255, 196, 0, 0.45);
-            color: #ffd24d;
-            padding: 12px 16px;
-            margin-top: 16px;
-            font-size: 12px;
-            line-height: 1.5;
-            text-shadow: 0 0 5px rgba(255, 196, 0, 0.35);
+            border-color: rgba(255, 209, 102, 0.42);
+            background: rgba(255, 209, 102, 0.08);
+            color: var(--warning);
+            white-space: pre-line;
         }
 
         .btn-confirm {
-            margin-top: 10px;
             width: 100%;
-            border-color: #ffd24d;
-            color: #ffd24d;
-            text-shadow: 0 0 5px rgba(255, 196, 0, 0.4);
+            margin-top: 10px;
+            border-color: rgba(255, 209, 102, 0.55);
+            background: rgba(255, 209, 102, 0.08);
+            color: var(--warning);
         }
 
-        .btn-confirm:hover {
-            background: rgba(255, 196, 0, 0.15);
-            box-shadow: 0 0 12px rgba(255, 196, 0, 0.35);
+        .btn-download {
+            display: flex;
+            width: 100%;
+            min-height: 54px;
+            flex: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-top: 12px;
+            padding: 0 16px;
+            text-align: left;
         }
 
-        .info-box {
-            background: rgba(0, 255, 0, 0.08);
-            border-left: 4px solid #00ff00;
-            padding: 12px 16px;
-            border-radius: 0;
+        .button-label {
+            color: inherit;
             font-size: 12px;
-            color: #00ff00;
-            margin-bottom: 16px;
-            line-height: 1.5;
-            box-shadow: 0 0 10px rgba(0, 255, 0, 0.1);
-            text-shadow: 0 0 3px rgba(0, 255, 0, 0.3);
+            font-weight: 800;
         }
 
-        @media (max-width: 768px) {
-            body {
-                padding: 8px;
-                align-items: flex-start;
-            }
+        .button-meta {
+            color: var(--muted);
+            font-size: 9px;
+            font-weight: 500;
+            letter-spacing: 0;
+        }
 
-            .shell {
-                max-width: none;
-            }
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
 
-            .back-link {
-                margin-bottom: 8px;
-            }
-
-            .header {
-                padding: 18px 14px;
-            }
-
-            .header h1 {
-                font-size: 24px;
-            }
-
-            .header p {
-                font-size: 12px;
-            }
-
+        @media (max-width: 920px) {
             .content {
-                padding: 14px;
-                gap: 16px;
+                grid-template-columns: minmax(0, 1fr);
             }
 
             textarea {
-                min-height: 230px;
-                font-size: 12px;
+                min-height: 330px;
             }
 
-            .controls {
-                position: sticky;
-                bottom: 0;
-                background: #0f1330;
-                padding-top: 8px;
+            .empty-state {
+                min-height: 260px;
+            }
+        }
+
+        @media (max-width: 700px) {
+            body {
+                padding: 10px;
             }
 
-            button {
-                padding: 10px 12px;
-                font-size: 12px;
+            .topbar {
+                margin-bottom: 8px;
             }
 
-            .table-wrapper {
-                max-height: 320px;
+            .back-link,
+            .privacy-badge {
+                min-height: 34px;
+                font-size: 9px;
             }
 
-            .csv-preview th,
-            .csv-preview td {
-                padding: 8px;
+            .privacy-badge {
+                max-width: 58%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .container {
+                border-radius: 13px;
+            }
+
+            .header {
+                padding: 22px 18px 20px;
+            }
+
+            .header h1 {
+                font-size: clamp(27px, 9vw, 36px);
+                letter-spacing: -0.045em;
+            }
+
+            .header-copy {
+                margin-top: 11px;
+                font-size: 13px;
+                line-height: 1.55;
+            }
+
+            .header-chips {
+                margin-top: 15px;
+            }
+
+            .header-chip {
+                font-size: 9px;
+            }
+
+            .content {
+                gap: 12px;
+                padding: 12px;
+            }
+
+            .panel {
+                padding: 15px;
+                border-radius: 11px;
+            }
+
+            .panel-heading {
+                gap: 10px;
+                margin-bottom: 13px;
+            }
+
+            .heading-copy {
+                gap: 9px;
+            }
+
+            .step-number {
+                width: 29px;
+                height: 29px;
+                flex-basis: 29px;
+            }
+
+            .panel-heading h2 {
+                font-size: 16px;
+            }
+
+            .panel-heading p {
+                font-size: 11px;
+            }
+
+            textarea {
+                min-height: 280px;
+                padding: 13px;
+                font-size: 11px;
+            }
+
+            .btn-parse {
+                min-height: 50px;
+            }
+
+            .preview-toolbar {
+                display: none !important;
+            }
+
+            .preview-container.has-results .table-wrapper {
+                display: none;
+            }
+
+            .preview-container.has-results .mobile-preview {
+                display: grid;
+                gap: 10px;
+                padding: 10px;
+            }
+
+            .empty-state {
+                min-height: 180px;
+                padding: 24px 18px;
+            }
+
+            .btn-download {
+                min-height: 52px;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .privacy-badge {
+                max-width: 54%;
+            }
+
+            .header-chip:last-child {
+                display: none;
+            }
+
+            .panel-heading {
+                flex-wrap: wrap;
+            }
+
+            .output-section .panel-heading {
+                flex-wrap: nowrap;
+            }
+
+            .account-field {
+                grid-template-columns: minmax(78px, 0.4fr) minmax(0, 1fr);
+            }
+
+            .button-meta {
+                display: none;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                scroll-behavior: auto !important;
+                transition-duration: 0.01ms !important;
             }
         }
     </style>
@@ -473,64 +855,124 @@
 </head>
 <body>
     <div class="shell">
-        <a class="back-link" href="/tools/">← All Tools</a>
-        <div class="container">
-            <div class="header">
-                <h1>⚡ FAST ACCOUNTS ⚡</h1>
-                <p>[ CREDENTIAL PARSER & CSV GENERATOR ]</p>
-            </div>
-
-        <div class="content">
-            <!-- Input Section -->
-            <div class="section">
-                <div class="section-title">>>> PASTE DATA <<<</div>
-                <div class="info-box">
-                    $ Parse any credential format. Detects platform & generates clean CSV.<br>
-                    $ Also auto-detects unlabelled blocks (@handle / email / password / country) — confirm the mapping before download.
-                </div>
-                <textarea id="inputText" placeholder="$ paste credential data here...&#10;&#10;Supports:&#10;• Twitter/X (with email-password, 2FA)&#10;• TikTok (with email)&#10;• Facebook (with 2FA)&#10;• And more..."></textarea>
-                <div class="controls">
-                    <button class="btn-parse" onclick="parseData()">⚡ Parse & Generate</button>
-                    <button class="btn-clear" onclick="clearAll()">Clear</button>
-                </div>
-                <div class="error-message" id="errorMessage"></div>
-                <div class="success-message" id="successMessage"></div>
-                <div class="warning-message" id="warningMessage"></div>
-            </div>
-
-            <!-- Output Section -->
-            <div class="output-section">
-                <div class="section-title">>>> CSV PREVIEW <<<</div>
-                <div class="preview-container">
-                    <div class="table-wrapper">
-                        <table class="csv-preview" id="previewTable">
-                            <thead></thead>
-                            <tbody></tbody>
-                        </table>
-                        <div class="empty-state" id="emptyState">
-                            $ awaiting parsed data...
-                        </div>
-                    </div>
-                </div>
-                <div class="stats" id="stats" style="display: none;">
-                    <strong id="statsText"></strong>
-                </div>
-                <div class="confirm-panel" id="confirmPanel" style="display: none;">
-                    <div id="confirmText"></div>
-                    <button class="btn-confirm" id="confirmBtn" onclick="confirmMapping()">✓ Confirm mapping &amp; enable download</button>
-                </div>
-                <button class="btn-download" id="downloadBtn" onclick="downloadCSV()" disabled style="margin-top: 16px;">
-                    ⬇️  DOWNLOAD CSV
-                </button>
+        <div class="topbar">
+            <a class="back-link" href="/tools/">← All tools</a>
+            <div class="privacy-badge" title="Your pasted data is processed only in this browser">
+                <span class="privacy-dot" aria-hidden="true"></span>
+                Local processing · no upload
             </div>
         </div>
-    </div>
+
+        <main class="container">
+            <header class="header">
+                <div class="eyebrow">FastAccs Tools / CSV Lazer</div>
+                <h1>Messy credentials in. Clean CSV out.</h1>
+                <p class="header-copy">Paste account logs in almost any labelled format. CSV Lazer separates account, email, recovery and 2FA fields directly in your browser.</p>
+                <div class="header-chips" aria-label="Supported capabilities">
+                    <span class="header-chip">Flexible labels</span>
+                    <span class="header-chip">Profile matching</span>
+                    <span class="header-chip">Backup credentials</span>
+                    <span class="header-chip">No data leaves this page</span>
+                </div>
+            </header>
+
+            <div class="content">
+                <section class="panel section input-panel" aria-labelledby="inputTitle">
+                    <div class="panel-heading">
+                        <div class="heading-copy">
+                            <span class="step-number" aria-hidden="true">01</span>
+                            <div>
+                                <h2 id="inputTitle">Paste your logs</h2>
+                                <p>One account per block. Labels and separators can vary.</p>
+                            </div>
+                        </div>
+                        <button class="btn-clear" type="button" onclick="clearAll()">Clear</button>
+                    </div>
+
+                    <div class="info-box" id="inputHelp">
+                        <span class="format-pill">label: value</span>
+                        <span class="format-pill">label → value</span>
+                        <span class="format-pill">label | value</span>
+                        <span class="format-pill">unlabelled blocks</span>
+                    </div>
+
+                    <label class="sr-only" for="inputText">Credential logs to parse</label>
+                    <textarea id="inputText" aria-describedby="inputHelp" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Paste credential data here...&#10;&#10;username: example_user&#10;password: account-password&#10;email: example@email.com&#10;email-password: mailbox-password&#10;backup-email: recovery@email.com&#10;password: recovery-password"></textarea>
+
+                    <div class="controls">
+                        <button class="btn-parse" type="button" onclick="parseData()">⚡ Parse credentials</button>
+                    </div>
+
+                    <div class="message-stack" aria-live="polite" aria-atomic="true">
+                        <div class="error-message" id="errorMessage"></div>
+                        <div class="success-message" id="successMessage"></div>
+                        <div class="warning-message" id="warningMessage"></div>
+                    </div>
+                </section>
+
+                <section class="panel output-section" aria-labelledby="outputTitle">
+                    <div class="panel-heading">
+                        <div class="heading-copy">
+                            <span class="step-number" aria-hidden="true">02</span>
+                            <div>
+                                <h2 id="outputTitle">Review and export</h2>
+                                <p>Check every mapped field before downloading.</p>
+                            </div>
+                        </div>
+                        <span class="status-badge" id="previewStatus">Waiting</span>
+                    </div>
+
+                    <div class="preview-container" id="previewContainer">
+                        <div class="preview-toolbar">
+                            <strong>Table preview</strong>
+                            <span>Scroll sideways to inspect every column →</span>
+                        </div>
+                        <div class="table-wrapper">
+                            <table class="csv-preview" id="previewTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="empty-state" id="emptyState">
+                                <div>
+                                    <span class="empty-icon" aria-hidden="true">⌁</span>
+                                    <strong>Your parsed accounts will appear here</strong>
+                                    <span>Paste logs, then choose “Parse credentials.”</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mobile-preview" id="mobilePreview" aria-label="Parsed account cards"></div>
+                    </div>
+
+                    <div class="stats" id="stats" style="display: none;" aria-live="polite">
+                        <strong id="statsText"></strong>
+                    </div>
+                    <div class="confirm-panel" id="confirmPanel" style="display: none;">
+                        <div id="confirmText"></div>
+                        <button class="btn-confirm" id="confirmBtn" type="button" onclick="confirmMapping()">✓ Confirm mapping and enable download</button>
+                    </div>
+                    <button class="btn-download" id="downloadBtn" type="button" onclick="downloadCSV()" disabled>
+                        <span class="button-label">↓ Download CSV</span>
+                        <span class="button-meta">Available after a successful parse</span>
+                    </button>
+                </section>
+            </div>
+        </main>
     </div>
 
     <script>
         let parsedData = [];
         let csvHeaders = [];
         let parseWarnings = [];
+
+        function setPreviewStatus(label, state = '') {
+            const badge = document.getElementById('previewStatus');
+            badge.textContent = label;
+            badge.className = `status-badge${state ? ` ${state}` : ''}`;
+        }
+
+        function setDownloadHint(message) {
+            document.querySelector('#downloadBtn .button-meta').textContent = message;
+        }
 
         function parseData() {
             const input = document.getElementById('inputText').value.trim();
@@ -541,10 +983,19 @@
             errorMsg.classList.remove('show');
             successMsg.classList.remove('show');
             warningMsg.classList.remove('show');
+            setPreviewStatus('Parsing');
 
             if (!input) {
                 errorMsg.textContent = '❌ [ERROR] No data provided. Paste credential data to begin.';
                 errorMsg.classList.add('show');
+                parsedData = [];
+                csvHeaders = [];
+                parseWarnings = [];
+                displayPreview();
+                hideConfirmPanel();
+                document.getElementById('downloadBtn').disabled = true;
+                setPreviewStatus('Needs input', 'error');
+                setDownloadHint('Paste logs to continue');
                 return;
             }
 
@@ -591,13 +1042,25 @@
                 if (hasRows && autoDetectedCount > 0) {
                     showConfirmPanel(autoDetectedCount);
                     document.getElementById('downloadBtn').disabled = true;
+                    setPreviewStatus('Review mapping', 'warning');
+                    setDownloadHint('Confirm the detected mapping to unlock');
                 } else {
                     hideConfirmPanel();
                     document.getElementById('downloadBtn').disabled = !hasRows;
+                    setPreviewStatus(hasRows ? 'Ready' : 'Check input', hasRows ? 'ready' : 'error');
+                    setDownloadHint(hasRows ? `${parsedData.length} row(s) ready to export` : 'No downloadable rows');
                 }
             } catch (error) {
                 errorMsg.textContent = `❌ [ERROR] ${error.message}`;
                 errorMsg.classList.add('show');
+                parsedData = [];
+                csvHeaders = [];
+                parseWarnings = [];
+                displayPreview();
+                hideConfirmPanel();
+                document.getElementById('downloadBtn').disabled = true;
+                setPreviewStatus('Could not parse', 'error');
+                setDownloadHint('Fix the input and try again');
             }
         }
 
@@ -1205,17 +1668,24 @@
         function displayPreview() {
             const table = document.getElementById('previewTable');
             const emptyState = document.getElementById('emptyState');
+            const previewContainer = document.getElementById('previewContainer');
+            const mobilePreview = document.getElementById('mobilePreview');
             const stats = document.getElementById('stats');
             const statsText = document.getElementById('statsText');
 
             table.querySelector('thead').innerHTML = '';
             table.querySelector('tbody').innerHTML = '';
+            mobilePreview.innerHTML = '';
+            previewContainer.classList.remove('has-results');
 
             if (parsedData.length === 0 || csvHeaders.length === 0) {
-                emptyState.textContent = '$ no parsed rows to preview. check warnings.';
+                renderEmptyState(
+                    'No parsed rows yet',
+                    'Check the input and any warnings, then try again.'
+                );
                 emptyState.style.display = 'flex';
                 stats.style.display = 'block';
-                statsText.textContent = `$ ${parsedData.length} account(s) | ${csvHeaders.length} field(s) | CHECK WARNINGS`;
+                statsText.textContent = `${parsedData.length} account(s) · ${csvHeaders.length} field(s) · Check input`;
                 return;
             }
 
@@ -1240,8 +1710,62 @@
             });
 
             emptyState.style.display = 'none';
+            renderMobilePreview();
+            previewContainer.classList.add('has-results');
             stats.style.display = 'block';
-            statsText.textContent = `$ ${parsedData.length} account(s) | ${csvHeaders.length} field(s) | READY`;
+            statsText.textContent = `${parsedData.length} account(s) · ${csvHeaders.length} field(s) · Ready`;
+        }
+
+        function renderEmptyState(title = 'Your parsed accounts will appear here', description = 'Paste logs, then choose “Parse credentials.”') {
+            const emptyState = document.getElementById('emptyState');
+            const wrapper = document.createElement('div');
+            const icon = document.createElement('span');
+            const heading = document.createElement('strong');
+            const copy = document.createElement('span');
+
+            icon.className = 'empty-icon';
+            icon.setAttribute('aria-hidden', 'true');
+            icon.textContent = '⌁';
+            heading.textContent = title;
+            copy.textContent = description;
+
+            wrapper.append(icon, heading, copy);
+            emptyState.replaceChildren(wrapper);
+        }
+
+        function renderMobilePreview() {
+            const mobilePreview = document.getElementById('mobilePreview');
+
+            parsedData.forEach((account, index) => {
+                const card = document.createElement('article');
+                const cardHeader = document.createElement('div');
+                const cardTitle = document.createElement('strong');
+                const cardNumber = document.createElement('span');
+                const fields = document.createElement('dl');
+
+                card.className = 'account-card';
+                cardHeader.className = 'account-card-header';
+                cardNumber.className = 'account-card-number';
+                fields.className = 'account-fields';
+                cardTitle.textContent = account.username || account.email || `Account ${index + 1}`;
+                cardNumber.textContent = `#${String(index + 1).padStart(2, '0')}`;
+                cardHeader.append(cardTitle, cardNumber);
+
+                csvHeaders.forEach(header => {
+                    const field = document.createElement('div');
+                    const label = document.createElement('dt');
+                    const value = document.createElement('dd');
+
+                    field.className = 'account-field';
+                    label.textContent = formatHeaderName(header);
+                    value.textContent = account[header] || '—';
+                    field.append(label, value);
+                    fields.appendChild(field);
+                });
+
+                card.append(cardHeader, fields);
+                mobilePreview.appendChild(card);
+            });
         }
 
         function renderWarnings(warnings) {
@@ -1274,6 +1798,10 @@
         function confirmMapping() {
             hideConfirmPanel();
             document.getElementById('downloadBtn').disabled = parsedData.length === 0;
+            if (parsedData.length > 0) {
+                setPreviewStatus('Ready', 'ready');
+                setDownloadHint(`${parsedData.length} row(s) ready to export`);
+            }
         }
 
         function formatHeaderName(header) {
@@ -1315,6 +1843,9 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            setPreviewStatus('Downloaded', 'ready');
+            setDownloadHint(`${parsedData.length} row(s) exported successfully`);
         }
 
         function generateFilename() {
@@ -1379,7 +1910,9 @@
             document.getElementById('inputText').value = '';
             document.getElementById('previewTable').querySelector('thead').innerHTML = '';
             document.getElementById('previewTable').querySelector('tbody').innerHTML = '';
-            document.getElementById('emptyState').textContent = '$ awaiting parsed data...';
+            document.getElementById('mobilePreview').innerHTML = '';
+            document.getElementById('previewContainer').classList.remove('has-results');
+            renderEmptyState();
             document.getElementById('emptyState').style.display = 'flex';
             document.getElementById('stats').style.display = 'none';
             document.getElementById('downloadBtn').disabled = true;
@@ -1390,6 +1923,8 @@
             parsedData = [];
             csvHeaders = [];
             parseWarnings = [];
+            setPreviewStatus('Waiting');
+            setDownloadHint('Available after a successful parse');
         }
     </script>
 </body>
