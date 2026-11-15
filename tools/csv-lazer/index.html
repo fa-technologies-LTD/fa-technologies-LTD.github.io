@@ -884,6 +884,18 @@
                     continue;
                 }
 
+                // Complete an email/password pair before testing a plain word as a
+                // country. Passwords such as "mail-secret" otherwise look country-like.
+                const previous = order[order.length - 1];
+                const followsUnpairedEmail =
+                    (previous === 'email' && fields.password && !fields.email_password) ||
+                    (previous === 'secondary_email' && !fields.secondary_email_password) ||
+                    (previous === 'backup_email' && !fields.backup_email_password);
+                if (followsUnpairedEmail) {
+                    placePassword(value);
+                    continue;
+                }
+
                 // A plain word that arrives after username + password is a country/nationality.
                 if (fields.username && fields.password && looksLikeCountryWord(value) && !fields.country) {
                     place('country', value);
@@ -1051,6 +1063,14 @@
                 return null;
             }
 
+            // Treat spaces, hyphens and underscores as equivalent when matching known
+            // credential labels. Unknown labels still fall through to a custom snake_case
+            // column, so widening alias support does not remove CSV Lazer's flexibility.
+            const aliasKey = cleaned
+                .replace(/[_-]+/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+
             const keyMap = {
                 'username': 'username',
                 'login': 'username',
@@ -1064,24 +1084,30 @@
                 'email': 'email',
                 'e-mail': 'email',
                 'primary email': 'email',
+                'primary mail': 'email',
                 'email-password': 'email_password',
                 'email_password': 'email_password',
                 'email_pass': 'email_password',
                 'email pass': 'email_password',
+                'email password': 'email_password',
                 'password_email': 'email_password',
                 'email-pass': 'email_password',
                 'mail pass': 'mail_pass',
                 'mail_pass': 'mail_pass',
                 'mail password': 'mail_pass',
                 'secondary email': 'secondary_email',
+                'secondary mail': 'secondary_email',
                 'secondary_email': 'secondary_email',
                 'sec email': 'secondary_email',
+                'sec mail': 'secondary_email',
                 'sec-email': 'secondary_email',
                 'sec_email': 'secondary_email',
                 'secondary-email': 'secondary_email',
                 'sec email password': 'secondary_email_password',
+                'sec mail password': 'secondary_email_password',
                 'sec-email password': 'secondary_email_password',
                 'sec email pass': 'secondary_email_password',
+                'sec mail pass': 'secondary_email_password',
                 'sec_email_pass': 'secondary_email_password',
                 'sec pass': 'secondary_email_password',
                 'sec-pass': 'secondary_email_password',
@@ -1089,9 +1115,36 @@
                 'secondary password': 'secondary_email_password',
                 'secondary_password': 'secondary_email_password',
                 'secondary email password': 'secondary_email_password',
+                'secondary mail password': 'secondary_email_password',
                 'backup password': 'backup_email_password',
                 'backup_password': 'backup_email_password',
                 'backup email password': 'backup_email_password',
+                'backup email pass': 'backup_email_password',
+                'backup mail password': 'backup_email_password',
+                'backup mail pass': 'backup_email_password',
+                'back up password': 'backup_email_password',
+                'back up email password': 'backup_email_password',
+                'back up email pass': 'backup_email_password',
+                'back up mail password': 'backup_email_password',
+                'bk up password': 'backup_email_password',
+                'bk up email password': 'backup_email_password',
+                'bk up email pass': 'backup_email_password',
+                'bk up mail password': 'backup_email_password',
+                'bkup password': 'backup_email_password',
+                'bkup email password': 'backup_email_password',
+                'bkup email pass': 'backup_email_password',
+                'bkp password': 'backup_email_password',
+                'bkp email password': 'backup_email_password',
+                'bkp email pass': 'backup_email_password',
+                'recovery password': 'backup_email_password',
+                'recovery email password': 'backup_email_password',
+                'recovery email pass': 'backup_email_password',
+                'recovery mail password': 'backup_email_password',
+                'recovery mail pass': 'backup_email_password',
+                'alternate email password': 'backup_email_password',
+                'alternate email pass': 'backup_email_password',
+                'alt email password': 'backup_email_password',
+                'alt email pass': 'backup_email_password',
                 'country': 'country',
                 'nationality': 'country',
                 'region': 'country',
@@ -1101,9 +1154,23 @@
                 '2fa_recovery': '2fa_link',
                 'backup': 'backup_email',
                 'backup email': 'backup_email',
+                'backup mail': 'backup_email',
                 'backup_email': 'backup_email',
+                'back up email': 'backup_email',
+                'back up mail': 'backup_email',
+                'bk up email': 'backup_email',
+                'bk up mail': 'backup_email',
+                'bkup email': 'backup_email',
+                'bkup mail': 'backup_email',
+                'bkp email': 'backup_email',
+                'bkp mail': 'backup_email',
                 'recovery email': 'backup_email',
+                'recovery mail': 'backup_email',
                 'recovery_email': 'backup_email',
+                'alternate email': 'backup_email',
+                'alternate mail': 'backup_email',
+                'alt email': 'backup_email',
+                'alt mail': 'backup_email',
                 'two factor': '2fa_link',
                 'profile': 'profile_link',
                 'profile_link': 'profile_link',
@@ -1124,8 +1191,8 @@
                 'date': 'creation_date'
             };
 
-            if (keyMap[cleaned]) {
-                return keyMap[cleaned];
+            if (keyMap[cleaned] || keyMap[aliasKey]) {
+                return keyMap[cleaned] || keyMap[aliasKey];
             }
 
             const normalized = cleaned
