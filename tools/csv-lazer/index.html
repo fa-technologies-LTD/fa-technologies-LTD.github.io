@@ -595,6 +595,7 @@
         .error-message,
         .success-message,
         .warning-message,
+        .integrity-message,
         .confirm-panel {
             margin-top: 12px;
             padding: 11px 13px;
@@ -610,19 +611,30 @@
             color: var(--green);
         }
 
+        .stats.blocked {
+            border-color: rgba(255, 107, 138, 0.42);
+            background: rgba(255, 107, 138, 0.08);
+        }
+
+        .stats.blocked strong {
+            color: var(--danger);
+        }
+
         .message-stack:empty {
             display: none;
         }
 
         .error-message,
         .success-message,
-        .warning-message {
+        .warning-message,
+        .integrity-message {
             display: none;
         }
 
         .error-message.show,
         .success-message.show,
-        .warning-message.show {
+        .warning-message.show,
+        .integrity-message.show {
             display: block;
         }
 
@@ -637,6 +649,13 @@
             border-color: rgba(255, 209, 102, 0.42);
             background: rgba(255, 209, 102, 0.08);
             color: var(--warning);
+            white-space: pre-line;
+        }
+
+        .integrity-message {
+            border-color: rgba(255, 107, 138, 0.58);
+            background: rgba(255, 107, 138, 0.11);
+            color: #ff9db1;
             white-space: pre-line;
         }
 
@@ -907,6 +926,7 @@
                         <div class="error-message" id="errorMessage"></div>
                         <div class="success-message" id="successMessage"></div>
                         <div class="warning-message" id="warningMessage"></div>
+                        <div class="integrity-message" id="integrityMessage"></div>
                     </div>
                 </section>
 
@@ -963,6 +983,7 @@
         let parsedData = [];
         let csvHeaders = [];
         let parseWarnings = [];
+        let parseIntegrityErrors = [];
 
         function setPreviewStatus(label, state = '') {
             const badge = document.getElementById('previewStatus');
@@ -974,15 +995,21 @@
             document.querySelector('#downloadBtn .button-meta').textContent = message;
         }
 
+        function isExportAllowed(rows = parsedData, integrityErrors = parseIntegrityErrors) {
+            return rows.length > 0 && integrityErrors.length === 0;
+        }
+
         function parseData() {
             const input = document.getElementById('inputText').value.trim();
             const errorMsg = document.getElementById('errorMessage');
             const successMsg = document.getElementById('successMessage');
             const warningMsg = document.getElementById('warningMessage');
+            const integrityMsg = document.getElementById('integrityMessage');
 
             errorMsg.classList.remove('show');
             successMsg.classList.remove('show');
             warningMsg.classList.remove('show');
+            integrityMsg.classList.remove('show');
             setPreviewStatus('Parsing');
 
             if (!input) {
@@ -991,6 +1018,7 @@
                 parsedData = [];
                 csvHeaders = [];
                 parseWarnings = [];
+                parseIntegrityErrors = [];
                 displayPreview();
                 hideConfirmPanel();
                 document.getElementById('downloadBtn').disabled = true;
@@ -1003,6 +1031,7 @@
                 const result = intelligentParse(input);
                 parsedData = result.accounts;
                 parseWarnings = result.warnings;
+                parseIntegrityErrors = result.integrityErrors || [];
 
                 // Extract all unique headers
                 const headersSet = new Set();
@@ -1030,16 +1059,24 @@
                 displayPreview();
 
                 const warningSuffix = parseWarnings.length > 0 ? ` | ${parseWarnings.length} warning(s)` : '';
-                successMsg.textContent = `✓ [SUCCESS] Parsed ${parsedData.length} account(s) | ${csvHeaders.length} field(s)${warningSuffix}`;
+                const blockedSuffix = parseIntegrityErrors.length > 0 ? ` | ${parseIntegrityErrors.length} blocking issue(s)` : '';
+                const resultLabel = parseIntegrityErrors.length > 0 ? 'PARSED — REVIEW REQUIRED' : 'SUCCESS';
+                successMsg.textContent = `✓ [${resultLabel}] Parsed ${parsedData.length} account(s) | ${csvHeaders.length} field(s)${warningSuffix}${blockedSuffix}`;
                 successMsg.classList.add('show');
 
                 renderWarnings(parseWarnings);
+                renderIntegrityErrors(parseIntegrityErrors);
 
                 // Unlabelled input is inferred by shape, so hold the download until the
                 // operator confirms the mapping is right (blocking confirm).
                 const hasRows = parsedData.length > 0;
                 const autoDetectedCount = result.autoDetectedCount || 0;
-                if (hasRows && autoDetectedCount > 0) {
+                if (parseIntegrityErrors.length > 0) {
+                    hideConfirmPanel();
+                    document.getElementById('downloadBtn').disabled = true;
+                    setPreviewStatus('Export blocked', 'error');
+                    setDownloadHint('Resolve every identity issue before export');
+                } else if (hasRows && autoDetectedCount > 0) {
                     showConfirmPanel(autoDetectedCount);
                     document.getElementById('downloadBtn').disabled = true;
                     setPreviewStatus('Review mapping', 'warning');
@@ -1056,6 +1093,7 @@
                 parsedData = [];
                 csvHeaders = [];
                 parseWarnings = [];
+                parseIntegrityErrors = [];
                 displayPreview();
                 hideConfirmPanel();
                 document.getElementById('downloadBtn').disabled = true;
@@ -1066,6 +1104,7 @@
 
         function intelligentParse(input) {
             const warnings = [];
+            const integrityErrors = [];
             const accounts = [];
             const urls = [];
             const credentialBlocks = [];
@@ -1248,20 +1287,70 @@
             }
 
             const unusedLinks = urls.map((link, index) => ({ ...link, index, used: false }));
+            const profileLinks = unusedLinks.filter(link => isLikelyProfileUrl(link.value));
+            const candidateLinksByBlock = new Map();
+            const candidateBlocksByLink = new Map(profileLinks.map(link => [link.index, []]));
+            const problematicBlocks = new Set();
+            const problematicLinks = new Set();
+
+            // Build the complete identity graph before assigning anything. This prevents an
+            // earlier unmatched block from consuming a URL that belongs to a later block.
+            credentialBlocks.forEach((block, blockIndex) => {
+                if (block.fields.profile_link) {
+                    return;
+                }
+
+                const candidates = findExactProfileLinks(block.fields, profileLinks);
+                candidateLinksByBlock.set(blockIndex, candidates);
+                candidates.forEach(link => candidateBlocksByLink.get(link.index).push(blockIndex));
+            });
+
+            candidateLinksByBlock.forEach((candidates, blockIndex) => {
+                if (candidates.length > 1) {
+                    const lines = candidates.map(link => link.lineNumber).join(', ');
+                    integrityErrors.push(`E201: Credential block starting at line ${credentialBlocks[blockIndex].startLine} matches multiple profile links on lines ${lines}.`);
+                    problematicBlocks.add(blockIndex);
+                    candidates.forEach(link => problematicLinks.add(link.index));
+                }
+            });
+
+            candidateBlocksByLink.forEach((blockIndexes, linkIndex) => {
+                if (blockIndexes.length > 1) {
+                    const starts = blockIndexes.map(index => credentialBlocks[index].startLine).join(', ');
+                    const link = profileLinks.find(candidate => candidate.index === linkIndex);
+                    integrityErrors.push(`E202: Profile link on line ${link.lineNumber} matches multiple credential blocks starting at lines ${starts}.`);
+                    problematicLinks.add(linkIndex);
+                    blockIndexes.forEach(index => problematicBlocks.add(index));
+                }
+            });
+
+            const assignedLinksByBlock = new Map();
+            candidateLinksByBlock.forEach((candidates, blockIndex) => {
+                if (candidates.length !== 1 || problematicBlocks.has(blockIndex)) {
+                    return;
+                }
+
+                const candidate = candidates[0];
+                const matchingBlocks = candidateBlocksByLink.get(candidate.index) || [];
+                if (matchingBlocks.length === 1 && !problematicLinks.has(candidate.index)) {
+                    assignedLinksByBlock.set(blockIndex, candidate);
+                    candidate.used = true;
+                }
+            });
 
             for (let idx = 0; idx < credentialBlocks.length; idx++) {
-                const row = {};
                 const block = credentialBlocks[idx];
-                const blockFields = block.fields;
-                const matchedLink = blockFields.profile_link ? null : findBestProfileLink(blockFields, unusedLinks);
-
-                Object.assign(row, blockFields);
+                const row = { ...block.fields };
+                const matchedLink = assignedLinksByBlock.get(idx);
 
                 if (matchedLink) {
                     row.profile_link = matchedLink.value;
-                    matchedLink.used = true;
                 } else if (!row.profile_link) {
                     row.profile_link = '';
+                    if (profileLinks.length > 0 && !problematicBlocks.has(idx)) {
+                        integrityErrors.push(`E203: Credential block starting at line ${block.startLine} has no deterministic profile-link match.`);
+                        problematicBlocks.add(idx);
+                    }
                 }
 
                 accounts.push(row);
@@ -1272,6 +1361,10 @@
                 .forEach(link => {
                     if (isLikelyProfileUrl(link.value)) {
                         accounts.push({ profile_link: link.value });
+                        if (!problematicLinks.has(link.index)) {
+                            integrityErrors.push(`E204: Profile link on line ${link.lineNumber} did not match a credential block and was kept as a link-only row.`);
+                            problematicLinks.add(link.index);
+                        }
                     } else {
                         warnings.push(`W114 line ${link.lineNumber}: Standalone non-profile link was not used as a profile row.`);
                     }
@@ -1296,7 +1389,11 @@
                 warnings.push(`W115: Ignored ${unusedNonProfileCount} standalone non-profile link(s).`);
             }
 
-            return { accounts, warnings, autoDetectedCount: autoDetectedBlocks.length };
+            findDuplicateProfileLinks(accounts).forEach(duplicate => {
+                integrityErrors.push(`E205: The same profile link appears in multiple output rows: ${duplicate.rows.map(row => row + 1).join(', ')}.`);
+            });
+
+            return { accounts, warnings, integrityErrors, autoDetectedCount: autoDetectedBlocks.length };
         }
 
         // Infer the fields of an unlabelled block (no "key: value" lines) from the shape of
@@ -1391,26 +1488,64 @@
             return /^[A-Za-z][A-Za-z .'-]{1,24}$/.test(str);
         }
 
-        function findBestProfileLink(fields, links) {
-            const candidates = links.filter(link => !link.used && isLikelyProfileUrl(link.value));
-            if (candidates.length === 0) {
-                return null;
+        function findExactProfileLinks(fields, links) {
+            // A supplied username is the strongest identity and must not be overruled by
+            // an email local-part that happens to resemble another profile handle.
+            const identityValues = fields.username
+                ? [fields.username]
+                : [fields.email, fields.secondary_email].filter(Boolean);
+
+            if (identityValues.length === 0) {
+                return [];
             }
 
-            const identityValues = [
-                fields.username,
-                fields.email,
-                fields.secondary_email
-            ].filter(Boolean);
-
-            for (const candidate of candidates) {
+            return links.filter(candidate => {
                 const tokens = extractProfileTokens(candidate.value);
-                if (identityValues.some(value => tokens.has(normalizeMatchToken(value)))) {
-                    return candidate;
+                return identityValues.some(value => tokens.has(normalizeMatchToken(value)));
+            });
+        }
+
+        function findDuplicateProfileLinks(rows) {
+            const seen = new Map();
+
+            rows.forEach((row, index) => {
+                const normalized = getProfileIdentityKey(row.profile_link);
+                if (!normalized) return;
+
+                if (!seen.has(normalized)) {
+                    seen.set(normalized, []);
                 }
+                seen.get(normalized).push(index);
+            });
+
+            return Array.from(seen.entries())
+                .filter(([, rowIndexes]) => rowIndexes.length > 1)
+                .map(([profileLink, rowIndexes]) => ({ profileLink, rows: rowIndexes }));
+        }
+
+        function normalizeProfileUrl(value) {
+            if (!value) return '';
+
+            try {
+                const url = new URL(value);
+                url.hash = '';
+                url.pathname = url.pathname.replace(/\/+$/, '') || '/';
+                return url.toString().toLowerCase();
+            } catch {
+                return String(value).trim().replace(/\/+$/, '').toLowerCase();
+            }
+        }
+
+        function getProfileIdentityKey(value) {
+            if (!value) return '';
+
+            const platform = detectPlatform(value);
+            const tokens = Array.from(extractProfileTokens(value)).filter(Boolean).sort();
+            if (platform && tokens.length > 0) {
+                return `${platform}:${tokens.join('|')}`;
             }
 
-            return candidates[0];
+            return normalizeProfileUrl(value);
         }
 
         function extractProfileTokens(link) {
@@ -1418,22 +1553,45 @@
 
             try {
                 const url = new URL(link);
-                const id = url.searchParams.get('id');
-                if (id) {
-                    tokens.add(normalizeMatchToken(id));
-                }
-
-                url.pathname
+                const platform = detectPlatform(link);
+                const parts = url.pathname
                     .split('/')
-                    .map(part => part.trim())
-                    .filter(Boolean)
-                    .forEach(part => tokens.add(normalizeMatchToken(part)));
+                    .map(part => {
+                        try {
+                            return decodeURIComponent(part).trim();
+                        } catch {
+                            return part.trim();
+                        }
+                    })
+                    .filter(Boolean);
+                const add = value => {
+                    const normalized = normalizeMatchToken(value);
+                    if (normalized) tokens.add(normalized);
+                };
+
+                if (platform === 'twitter') {
+                    const reserved = new Set(['home', 'explore', 'notifications', 'messages', 'i', 'search', 'settings', 'compose', 'intent', 'share']);
+                    if (parts[0] && !reserved.has(parts[0].toLowerCase())) add(parts[0]);
+                } else if (platform === 'instagram') {
+                    const reserved = new Set(['p', 'reel', 'reels', 'stories', 'explore', 'accounts', 'direct']);
+                    if (parts[0] && !reserved.has(parts[0].toLowerCase())) add(parts[0]);
+                } else if (platform === 'tiktok') {
+                    if (parts[0]?.startsWith('@')) add(parts[0]);
+                } else if (platform === 'facebook') {
+                    const id = url.searchParams.get('id');
+                    if (id) add(id);
+                    const reserved = new Set(['profile.php', 'pages', 'groups', 'watch', 'marketplace', 'events']);
+                    if (!id && parts[0] && !reserved.has(parts[0].toLowerCase())) add(parts[0]);
+                } else if (platform === 'linkedin') {
+                    if (['in', 'company', 'school'].includes(parts[0]?.toLowerCase()) && parts[1]) add(parts[1]);
+                } else if (platform === 'reddit') {
+                    if (['user', 'u'].includes(parts[0]?.toLowerCase()) && parts[1]) add(parts[1]);
+                } else if (platform === 'youtube') {
+                    if (parts[0]?.startsWith('@')) add(parts[0]);
+                    else if (['channel', 'c', 'user'].includes(parts[0]?.toLowerCase()) && parts[1]) add(parts[1]);
+                }
             } catch {
-                String(link)
-                    .split(/[/?#&=]+/)
-                    .map(part => part.trim())
-                    .filter(Boolean)
-                    .forEach(part => tokens.add(normalizeMatchToken(part)));
+                return tokens;
             }
 
             return tokens;
@@ -1677,6 +1835,7 @@
             table.querySelector('tbody').innerHTML = '';
             mobilePreview.innerHTML = '';
             previewContainer.classList.remove('has-results');
+            stats.classList.toggle('blocked', parseIntegrityErrors.length > 0);
 
             if (parsedData.length === 0 || csvHeaders.length === 0) {
                 renderEmptyState(
@@ -1713,7 +1872,9 @@
             renderMobilePreview();
             previewContainer.classList.add('has-results');
             stats.style.display = 'block';
-            statsText.textContent = `${parsedData.length} account(s) · ${csvHeaders.length} field(s) · Ready`;
+            statsText.textContent = parseIntegrityErrors.length > 0
+                ? `${parsedData.length} output row(s) · ${csvHeaders.length} field(s) · Export blocked`
+                : `${parsedData.length} account(s) · ${csvHeaders.length} field(s) · Ready`;
         }
 
         function renderEmptyState(title = 'Your parsed accounts will appear here', description = 'Paste logs, then choose “Parse credentials.”') {
@@ -1783,6 +1944,22 @@
             warningMsg.classList.add('show');
         }
 
+        function renderIntegrityErrors(errors) {
+            const integrityMsg = document.getElementById('integrityMessage');
+            integrityMsg.classList.remove('show');
+
+            if (!errors || errors.length === 0) {
+                return;
+            }
+
+            let text = `⛔ [EXPORT BLOCKED] ${errors.length} identity issue(s) must be resolved:\n`;
+            text += errors.map(error => `- ${error}`).join('\n');
+            text += '\n\nAdd each URL inside its matching account block as “profile_link: URL”, or correct the username so it matches the profile URL.';
+
+            integrityMsg.textContent = text;
+            integrityMsg.classList.add('show');
+        }
+
         function showConfirmPanel(count) {
             const panel = document.getElementById('confirmPanel');
             const text = document.getElementById('confirmText');
@@ -1796,6 +1973,16 @@
         }
 
         function confirmMapping() {
+            if (!isExportAllowed()) {
+                hideConfirmPanel();
+                document.getElementById('downloadBtn').disabled = true;
+                if (parseIntegrityErrors.length > 0) {
+                    setPreviewStatus('Export blocked', 'error');
+                    setDownloadHint('Resolve every identity issue before export');
+                }
+                return;
+            }
+
             hideConfirmPanel();
             document.getElementById('downloadBtn').disabled = parsedData.length === 0;
             if (parsedData.length > 0) {
@@ -1813,7 +2000,14 @@
         }
 
         function downloadCSV() {
-            if (parsedData.length === 0) return;
+            if (!isExportAllowed()) {
+                document.getElementById('downloadBtn').disabled = true;
+                if (parseIntegrityErrors.length > 0) {
+                    setPreviewStatus('Export blocked', 'error');
+                    setDownloadHint('Resolve every identity issue before export');
+                }
+                return;
+            }
 
             let csv = csvHeaders.join(',') + '\n';
 
@@ -1894,15 +2088,22 @@
         }
 
         function detectPlatform(link) {
-            const url = String(link).toLowerCase();
-            if (!url) return null;
-            if (url.includes('x.com') || url.includes('twitter.com')) return 'twitter';
-            if (url.includes('tiktok.com')) return 'tiktok';
-            if (url.includes('facebook.com')) return 'facebook';
-            if (url.includes('instagram.com')) return 'instagram';
-            if (url.includes('linkedin.com')) return 'linkedin';
-            if (url.includes('reddit.com')) return 'reddit';
-            if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
+            let hostname;
+
+            try {
+                hostname = new URL(String(link)).hostname.toLowerCase().replace(/^www\./, '');
+            } catch {
+                return null;
+            }
+
+            const isDomain = domain => hostname === domain || hostname.endsWith(`.${domain}`);
+            if (isDomain('x.com') || isDomain('twitter.com')) return 'twitter';
+            if (isDomain('tiktok.com')) return 'tiktok';
+            if (isDomain('facebook.com')) return 'facebook';
+            if (isDomain('instagram.com')) return 'instagram';
+            if (isDomain('linkedin.com')) return 'linkedin';
+            if (isDomain('reddit.com')) return 'reddit';
+            if (isDomain('youtube.com') || isDomain('youtu.be')) return 'youtube';
             return null;
         }
 
@@ -1915,14 +2116,17 @@
             renderEmptyState();
             document.getElementById('emptyState').style.display = 'flex';
             document.getElementById('stats').style.display = 'none';
+            document.getElementById('stats').classList.remove('blocked');
             document.getElementById('downloadBtn').disabled = true;
             document.getElementById('errorMessage').classList.remove('show');
             document.getElementById('successMessage').classList.remove('show');
             document.getElementById('warningMessage').classList.remove('show');
+            document.getElementById('integrityMessage').classList.remove('show');
             hideConfirmPanel();
             parsedData = [];
             csvHeaders = [];
             parseWarnings = [];
+            parseIntegrityErrors = [];
             setPreviewStatus('Waiting');
             setDownloadHint('Available after a successful parse');
         }

@@ -19,6 +19,16 @@ vm.runInContext(inlineScripts.at(-1)[1], context, { filename: 'csv-lazer/index.h
 
 const parse = input => JSON.parse(JSON.stringify(context.intelligentParse(input)));
 const normalizeKey = key => context.normalizeKey(key);
+const detectPlatform = link => context.detectPlatform(link);
+const isExportAllowed = (rows, integrityErrors) => context.isExportAllowed(rows, integrityErrors);
+
+const permutations = values => {
+    if (values.length <= 1) return [values];
+    return values.flatMap((value, index) =>
+        permutations(values.filter((_, candidateIndex) => candidateIndex !== index))
+            .map(rest => [value, ...rest])
+    );
+};
 
 test('routes the screenshot bk-up-email format without overwriting account password', () => {
     const result = parse(`
@@ -181,4 +191,190 @@ password: second-secret
     assert.equal(result.accounts.length, 2);
     assert.equal(result.accounts[0].profile_link, 'https://instagram.com/first_user');
     assert.equal(result.accounts[1].profile_link, 'https://instagram.com/second_user');
+    assert.deepEqual(result.integrityErrors, []);
+});
+
+test('reserves exact identity matches before handling unrelated blocks', () => {
+    const result = parse(`
+https://x.com/profile_alpha
+https://x.com/profile_beta
+
+username: unrelated_account
+password: sample-one
+
+username: profile_alpha
+password: sample-two
+    `);
+
+    assert.equal(result.accounts[0].username, 'unrelated_account');
+    assert.equal(result.accounts[0].profile_link, '');
+    assert.equal(result.accounts[1].username, 'profile_alpha');
+    assert.equal(result.accounts[1].profile_link, 'https://x.com/profile_alpha');
+    assert.equal(result.accounts.some(account =>
+        account.username === 'profile_alpha' && account.profile_link === 'https://x.com/profile_beta'
+    ), false);
+    assert.equal(result.integrityErrors.some(error => error.startsWith('E203:')), true);
+    assert.equal(result.integrityErrors.some(error => error.startsWith('E204:')), true);
+});
+
+test('matches every permutation of standalone links and credential blocks deterministically', () => {
+    const identities = ['user_a1', 'user_b2', 'user_c3', 'user_d4'];
+
+    for (const linkOrder of permutations(identities)) {
+        for (const blockOrder of permutations(identities)) {
+            const links = linkOrder.map(identity => `https://x.com/${identity}`).join('\n');
+            const blocks = blockOrder.map(identity =>
+                `username: ${identity}\npassword: secret-${identity}`
+            ).join('\n\n');
+            const result = parse(`${links}\n\n${blocks}`);
+
+            assert.deepEqual(result.integrityErrors, [], `${linkOrder.join(',')} / ${blockOrder.join(',')}`);
+            assert.equal(result.accounts.length, identities.length);
+            result.accounts.forEach(account => {
+                assert.equal(account.profile_link, `https://x.com/${account.username}`);
+            });
+        }
+    }
+});
+
+test('blocks a profile link that matches duplicate credential identities', () => {
+    const result = parse(`
+https://x.com/repeated_user
+
+username: repeated_user
+password: sample-one
+
+username: repeated_user
+password: sample-two
+    `);
+
+    assert.equal(result.integrityErrors.some(error => error.startsWith('E202:')), true);
+    assert.equal(result.accounts.filter(account => account.username === 'repeated_user').every(account => account.profile_link === ''), true);
+});
+
+test('blocks duplicate profile URLs even when their trailing slash differs', () => {
+    const result = parse(`
+https://x.com/duplicate_user
+https://x.com/duplicate_user/
+
+username: duplicate_user
+password: sample-secret
+    `);
+
+    assert.equal(result.integrityErrors.some(error => error.startsWith('E201:')), true);
+    assert.equal(result.integrityErrors.some(error => error.startsWith('E205:')), true);
+});
+
+test('preserves explicitly labelled profile links without positional inference', () => {
+    const result = parse(`
+username: first_account
+password: sample-one
+profile_link: https://x.com/explicit_first
+
+username: second_account
+password: sample-two
+profile: https://x.com/explicit_second
+    `);
+
+    assert.deepEqual(result.integrityErrors, []);
+    assert.equal(result.accounts[0].profile_link, 'https://x.com/explicit_first');
+    assert.equal(result.accounts[1].profile_link, 'https://x.com/explicit_second');
+});
+
+test('keeps profile links optional when no standalone profile list was supplied', () => {
+    const result = parse(`username: account_without_link\npassword: sample-secret`);
+
+    assert.deepEqual(result.integrityErrors, []);
+    assert.equal(result.accounts[0].profile_link, '');
+    assert.equal(result.warnings.some(warning => warning.startsWith('W110:')), true);
+});
+
+test('uses username as the authoritative identity when username and email disagree', () => {
+    const result = parse(`
+https://x.com/email_identity
+
+username: different_username
+email: email_identity@example.test
+password: sample-secret
+    `);
+
+    assert.equal(result.accounts[0].profile_link, '');
+    assert.equal(result.integrityErrors.some(error => error.startsWith('E203:')), true);
+});
+
+test('extracts only the canonical identity segment for every supported profile platform', () => {
+    const cases = [
+        ['https://x.com/sample_x', 'sample_x'],
+        ['https://instagram.com/sample_ig/', 'sample_ig'],
+        ['https://www.tiktok.com/@sample_tt', 'sample_tt'],
+        ['https://facebook.com/sample_fb', 'sample_fb'],
+        ['https://linkedin.com/in/sample_li', 'sample_li'],
+        ['https://reddit.com/user/sample_reddit', 'sample_reddit'],
+        ['https://youtube.com/@sample_yt', 'sample_yt']
+    ];
+
+    for (const [link, username] of cases) {
+        const result = parse(`${link}\n\nusername: ${username}\npassword: sample-secret`);
+        assert.deepEqual(result.integrityErrors, [], link);
+        assert.equal(result.accounts[0].profile_link, link, link);
+    }
+});
+
+test('does not treat reserved route words as profile identities', () => {
+    const result = parse(`
+https://x.com/i/user/12345
+
+username: user
+password: sample-secret
+    `);
+
+    assert.equal(result.accounts[0].profile_link, '');
+    assert.equal(result.integrityErrors.some(error => error.startsWith('E203:')), true);
+});
+
+test('requires exact supported hostnames instead of substring domain matches', () => {
+    assert.equal(detectPlatform('https://x.com/sample'), 'twitter');
+    assert.equal(detectPlatform('https://mobile.twitter.com/sample'), 'twitter');
+    assert.equal(detectPlatform('https://notx.com/sample'), null);
+    assert.equal(detectPlatform('https://instagram.com.evil.test/sample'), null);
+    assert.equal(detectPlatform('https://fakeyoutube.com/sample'), null);
+});
+
+test('detects the same explicit profile identity across x.com and twitter.com URLs', () => {
+    const result = parse(`
+username: first
+profile_link: https://x.com/shared_identity?s=20
+
+username: second
+profile_link: https://twitter.com/shared_identity/
+    `);
+
+    assert.equal(result.integrityErrors.some(error => error.startsWith('E205:')), true);
+});
+
+test('export policy fails closed whenever an integrity error exists', () => {
+    assert.equal(isExportAllowed([{ username: 'safe_row' }], []), true);
+    assert.equal(isExportAllowed([{ username: 'blocked_row' }], ['E203: mismatch']), false);
+    assert.equal(isExportAllowed([], []), false);
+});
+
+test('keeps an internal 2FA tool URL separate from reordered X profile links', () => {
+    const result = parse(`
+https://x.com/profile_north
+https://x.com/profile_south
+
+username: profile_south
+password: sample-south
+2fa_link: https://fastaccs.com/tools/easylogin/sample-south
+
+username: profile_north
+password: sample-north
+2fa_link: https://fastaccs.com/tools/easylogin/sample-north
+    `);
+
+    assert.deepEqual(result.integrityErrors, []);
+    assert.equal(result.accounts[0].profile_link, 'https://x.com/profile_south');
+    assert.equal(result.accounts[0]['2fa_link'], 'https://fastaccs.com/tools/easylogin/sample-south');
+    assert.equal(result.accounts[1].profile_link, 'https://x.com/profile_north');
+    assert.equal(result.accounts[1]['2fa_link'], 'https://fastaccs.com/tools/easylogin/sample-north');
 });
