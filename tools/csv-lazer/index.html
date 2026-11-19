@@ -916,7 +916,7 @@
                     </div>
 
                     <label class="sr-only" for="inputText">Credential logs to parse</label>
-                    <textarea id="inputText" aria-describedby="inputHelp" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Paste credential data here...&#10;&#10;username: example_user&#10;password: account-password&#10;email: example@email.com&#10;email-password: mailbox-password&#10;backup-email: recovery@email.com&#10;password: recovery-password"></textarea>
+                    <textarea id="inputText" oninput="invalidateEditedPreview()" aria-describedby="inputHelp" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Paste credential data here...&#10;&#10;username: example_user&#10;password: account-password&#10;email: example@email.com&#10;email-password: mailbox-password&#10;backup-email: recovery@email.com&#10;password: recovery-password"></textarea>
 
                     <div class="controls">
                         <button class="btn-parse" type="button" onclick="parseData()">⚡ Parse credentials</button>
@@ -984,6 +984,18 @@
         let csvHeaders = [];
         let parseWarnings = [];
         let parseIntegrityErrors = [];
+        let lastParsedInput = null;
+
+        function invalidateEditedPreview() {
+            if (lastParsedInput === null || lastParsedInput === document.getElementById('inputText').value) return;
+            resetPreview();
+            const message = 'Input changed. Parse again to download.';
+            const warning = document.getElementById('warningMessage');
+            warning.textContent = message;
+            warning.classList.add('show');
+            setPreviewStatus('Input changed', 'warning');
+            setDownloadHint(message);
+        }
 
         function setPreviewStatus(label, state = '') {
             const badge = document.getElementById('previewStatus');
@@ -1000,7 +1012,9 @@
         }
 
         function parseData() {
-            const input = document.getElementById('inputText').value.trim();
+            const source = document.getElementById('inputText').value;
+            const input = source.trim();
+            lastParsedInput = null;
             const errorMsg = document.getElementById('errorMessage');
             const successMsg = document.getElementById('successMessage');
             const warningMsg = document.getElementById('warningMessage');
@@ -1029,6 +1043,7 @@
 
             try {
                 const result = intelligentParse(input);
+                lastParsedInput = source;
                 parsedData = result.accounts;
                 parseWarnings = result.warnings;
                 parseIntegrityErrors = result.integrityErrors || [];
@@ -1088,6 +1103,7 @@
                     setDownloadHint(hasRows ? `${parsedData.length} row(s) ready to export` : 'No downloadable rows');
                 }
             } catch (error) {
+                lastParsedInput = null;
                 errorMsg.textContent = `❌ [ERROR] ${error.message}`;
                 errorMsg.classList.add('show');
                 parsedData = [];
@@ -1973,6 +1989,7 @@
         }
 
         function confirmMapping() {
+            invalidateEditedPreview();
             if (!isExportAllowed()) {
                 hideConfirmPanel();
                 document.getElementById('downloadBtn').disabled = true;
@@ -2000,6 +2017,8 @@
         }
 
         function downloadCSV() {
+            invalidateEditedPreview();
+            if (document.getElementById('downloadBtn').disabled) return;
             if (!isExportAllowed()) {
                 document.getElementById('downloadBtn').disabled = true;
                 if (parseIntegrityErrors.length > 0) {
@@ -2109,6 +2128,11 @@
 
         function clearAll() {
             document.getElementById('inputText').value = '';
+            resetPreview();
+        }
+
+        function resetPreview() {
+            lastParsedInput = null;
             document.getElementById('previewTable').querySelector('thead').innerHTML = '';
             document.getElementById('previewTable').querySelector('tbody').innerHTML = '';
             document.getElementById('mobilePreview').innerHTML = '';
